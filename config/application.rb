@@ -23,5 +23,10 @@ module Funcooker
     #
     # config.time_zone = "Central Time (US & Canada)"
     # config.eager_load_paths << Rails.root.join("extras")
+
+    # The OpenAI-compatible endpoint recipe import extracts with. LLM_MODEL is
+    # an id from its /v1/models.
+    config.x.llm.base_url = ENV.fetch("LLM_BASE_URL", "https://chat.bobbymeyer.com/v1")
+    config.x.llm.model = ENV["LLM_MODEL"]
   end
 end

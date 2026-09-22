@@ -1,0 +1,8 @@
+<%= page_head "import a recipe", lede: "From a recipe page's URL, or pasted as text." %>
+
+<%= its_swiss_form_with model: @recipe_import, class: "form measure" do |form| %>
+  <%= render "its_swiss/shared/errors", record: @recipe_import %>
+  <%= form.url_field :source_url, label: "URL" %>
+  <%= form.text_area :source_text, label: "Or paste the recipe", rows: 12 %>
+  <%= form.submit "Import" %>
+<% end %>

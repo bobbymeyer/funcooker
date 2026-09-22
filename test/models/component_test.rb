@@ -24,4 +24,9 @@ class ComponentTest < ActiveSupport::TestCase
     assert_not ComponentPart.new(parent: @salsa, child: @dish).valid?
     assert_not ComponentPart.new(parent: @dish, child: @dish).valid?
   end
+
+  test "source urls must be web addresses" do
+    assert_not Component.new(name: "x", source_url: "javascript:alert(1)").valid?
+    assert Component.new(name: "x", source_url: "https://food.test/chili").valid?
+  end
 end

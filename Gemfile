@@ -63,4 +63,11 @@ group :test do
   # Use system testing [https://guides.rubyonrails.org/testing.html#system-testing]
   gem "capybara"
   gem "selenium-webdriver"
+  gem "webmock"
 end
+
+# json 3 takes parse options only as keywords; ActiveSupport::JSON.decode in
+# Rails 8.1.3 still passes a hash, so every signed cookie read raises.
+gem "json", "< 3"
+
+gem "its-swiss", github: "bobbymeyer/its-swiss", tag: "v1.0.0"

@@ -12,6 +12,7 @@ class Component < ApplicationRecord
   has_many :schedule_entries, foreign_key: :dish_id, dependent: :restrict_with_error, inverse_of: :dish
 
   validates :name, presence: true
+  validates :source_url, format: { with: %r{\Ahttps?://\S+\z} }, allow_blank: true
 
   scope :dishes, -> { where.not(id: ComponentPart.select(:child_id)) }
 
@@ -19,6 +20,11 @@ class Component < ApplicationRecord
   # restriction for any of the members eating.
   def self.schedulable_for(members)
     dishes.reject { |dish| dish.restricted_for_any?(members) }
+  end
+
+  # Where the recipe came from, when that is a web page, safe to link.
+  def source_link
+    source_url if source_url.to_s.match?(%r{\Ahttps?://\S+\z})
   end
 
   def dish?

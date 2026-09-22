@@ -1,0 +1,10 @@
+<%= turbo_stream_from @recipe_import %>
+
+<%= page_head "import", lede: @recipe_import.source_url || "pasted text" %>
+
+<% if @recipe_import.failed? %>
+  <p class="errors"><%= @recipe_import.error %></p>
+  <p><%= link_to "Try again", new_recipe_import_path %></p>
+<% else %>
+  <p class="empty">Importing. This page updates when it is done.</p>
+<% end %>

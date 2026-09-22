@@ -1,0 +1,31 @@
+<!doctype html>
+<html>
+<head>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      { "@type": "WebSite", "name": "A Food Site" },
+      {
+        "@type": ["Recipe"],
+        "name": "Weeknight Chili",
+        "description": "A <b>fast</b> chili &amp; nothing fancy.",
+        "recipeIngredient": ["2 red onions, finely diced", "1 1/2 lb ground beef", "salt to taste"],
+        "recipeInstructions": [
+          {
+            "@type": "HowToSection",
+            "name": "Cook",
+            "itemListElement": [
+              { "@type": "HowToStep", "text": "Soften the onions." },
+              { "@type": "HowToStep", "text": "Brown the beef." }
+            ]
+          },
+          { "@type": "HowToStep", "text": "Season and simmer for 30 minutes." }
+        ]
+      }
+    ]
+  }
+  </script>
+</head>
+<body><p>Chili, as told by a food blogger at length.</p></body>
+</html>

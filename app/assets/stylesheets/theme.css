@@ -1,0 +1,63 @@
+/* What this application fills in.
+ *
+ * Unlayered on purpose. Everything its-swiss ships is inside a cascade layer,
+ * and an unlayered rule beats every layered one whatever its specificity — so
+ * this file wins without having to out-specify the library or reach for
+ * !important, and the grid and the domain components below it win too.
+ */
+
+:root {
+  /* --- The accent --------------------------------------------------------
+     State and emphasis only: the current destination, focus, a link, the one
+     primary action, the moment before something cannot be undone. Never a
+     filled area for its own sake.
+
+     Delete this line and read the app. If it still works, the value scale is
+     doing the work, which is the point. */
+  --accent: oklch(57.7% 0.234 28);
+  --accent-ink: var(--paper);
+
+  /* --- The typeface ------------------------------------------------------
+     The library ships none, and takes the grotesque already on the machine
+     until told otherwise. It sets every register in a face named for its
+     ratio of leading to size — its-swiss-150, its-swiss-200, its-swiss-100
+     — declared with that ratio as the ascent and no descent, which is what
+     puts every baseline on the grid. A typeface of your own is declared the
+     same way under the same names, and the helper writes it:
+
+       <%= its_swiss_typeface regular: "inter-regular.woff2", bold: "inter-bold.woff2" %%>
+
+     in the layout, after the library's stylesheets. --font-family is what
+     a machine with none of the faces falls through to. */
+  /* --font-family: "Your Face", ui-sans-serif, system-ui, sans-serif; */
+
+  /* --- The value scale ---------------------------------------------------
+     Neutral as it ships. These two turn the whole ladder together: a small
+     chroma at a yellow-green hue gives the warm grays of a printed page. */
+  /* --value-chroma: 0.006; */
+  /* --value-hue: 95; */
+
+  /* --- The grid ----------------------------------------------------------
+     How many fields this problem has. Six divides into halves and thirds and
+     is where the library starts; change it here once the pages have said what
+     they need, and every width in the app re-proportions. */
+  --columns: 6;
+  --gutter: 1.5rem;
+
+  /* --- The baseline ------------------------------------------------------
+     The interval everything vertical registers to, and the leading of the
+     body text — one number, because that is what a baseline grid is. Change
+     it and every leading, every gap and every picture's box follow.
+
+     A block of small type may sit on a half-line, with class="subgrid". An
+     inline <small> may not: it shares its paragraph's line. */
+  --line: 1.5rem;
+}
+
+/* The grid itself lives here, not in the gem: which blocks span which fields
+   is what this application looks like.
+
+   main.grid > .page-head { --span: 4; }
+*/
+
+.steps .numeric { width: 3ch; }

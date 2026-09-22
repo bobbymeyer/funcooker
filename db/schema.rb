@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_22_191540) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_22_194200) do
   create_table "component_ingredients", force: :cascade do |t|
     t.integer "component_id", null: false
     t.datetime "created_at", null: false
@@ -84,6 +84,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_22_191540) do
     t.index ["name"], name: "index_ingredients_on_name", unique: true
   end
 
+  create_table "recipe_imports", force: :cascade do |t|
+    t.integer "component_id"
+    t.datetime "created_at", null: false
+    t.text "error"
+    t.text "source_text"
+    t.string "source_url"
+    t.integer "status", default: 0, null: false
+    t.datetime "updated_at", null: false
+    t.index ["component_id"], name: "index_recipe_imports_on_component_id"
+  end
+
   create_table "schedule_entries", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.integer "dish_id", null: false
@@ -140,6 +151,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_22_191540) do
   add_foreign_key "component_parts", "steps"
   add_foreign_key "food_needs", "household_members"
   add_foreign_key "ingredients", "ingredient_families"
+  add_foreign_key "recipe_imports", "components"
   add_foreign_key "schedule_entries", "components", column: "dish_id"
   add_foreign_key "steps", "components"
   add_foreign_key "stock_transactions", "steps"

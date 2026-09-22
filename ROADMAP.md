@@ -69,14 +69,16 @@ The household eats together, so every member's restrictions apply to every
 ## recipe importer
 
 1. Fetch page → check for [schema.org/Recipe](https://schema.org/Recipe)
-   JSON-LD → parse directly if present.
-2. If absent, or the source is a photographed cookbook page, fall back to an
-   LLM vision/text pass that emits the same target JSON schema. One importer,
-   two entry points.
-3. Ingredient lines come back parsed as `{amount, unit, ingredient, note}`
-   from the same LLM call. No separate regex parsing step.
+   JSON-LD → read name, description and steps directly if present.
+2. If absent, send the page's text to the local model, constrained to the
+   recipe JSON schema. Pasted text takes the same path. A photographed
+   cookbook page takes it too, through a vision model.
+3. Ingredient lines come back parsed as `{amount, unit, ingredient, note}`.
+   From JSON-LD, only the ingredient lines go to the model.
 4. Imported recipes land as a single `Component`. Breaking them into
    reusable sub-components is manual.
+5. The model is served by llama-swap on the Studio, over its
+   OpenAI-compatible API. Extraction runs as a background job.
 
 Reference for site coverage/patterns:
 [recipe-scrapers](https://github.com/hhursev/recipe-scrapers) (Python, not
@@ -133,8 +135,8 @@ necessarily a dependency).
 
 ## stock, receipts, lot tracking
 
-- Each `StockItem` is a lot with `acquired_on` and `expires_on`, so "what's near expiry" is queryable and feeds the scheduler's soft
-  preferences.
+- Each `StockItem` is a lot with `acquired_on` and `expires_on`, so "what's
+  near expiry" is queryable and feeds the scheduler's soft preferences.
 - Receipt photo → same LLM extraction pattern as the recipe importer → line
   items fuzzy-matched to canonical `Ingredient` → confirmation step → batch
   `StockTransaction` write.
