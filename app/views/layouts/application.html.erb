@@ -1,29 +1,31 @@
-<!DOCTYPE html>
-<html>
-  <head>
-    <title><%= content_for(:title) || "Funcooker" %></title>
-    <meta name="viewport" content="width=device-width,initial-scale=1">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="application-name" content="Funcooker">
-    <meta name="mobile-web-app-capable" content="yes">
-    <%= csrf_meta_tags %>
-    <%= csp_meta_tag %>
+<%# What this application puts in the slots its_swiss/shell leaves. Everything
+    else a layout used to have to remember — the view transition opt-in, the
+    library's stylesheets, the importmap, a way past the masthead for a
+    keyboard, and the flash — is the shell's.
 
-    <%= yield :head %>
+    A layout rather than `layout "its_swiss/shell"` on the controller, because
+    content_for has to run while a view is rendering and these are set once for
+    the whole application. The last line is what makes this a layout *for* the
+    shell rather than one instead of it. %>
 
-    <%# Enable PWA manifest for installable apps (make sure to enable in config/routes.rb too!) %>
-    <%#= tag.link rel: "manifest", href: pwa_manifest_path(format: :json) %>
+<% content_for :head do %>
+  <%# This application's own stylesheets. The shell links the library's six and
+      stops; theme.css holds the accent and the grid, and nothing links it but
+      this. Unlayered, so they win wherever the two meet, whatever order they
+      arrive in. %>
+  <%= stylesheet_link_tag "theme", "data-turbo-track": "reload" %>
+<% end %>
 
-    <link rel="icon" href="/icon.png" type="image/png">
-    <link rel="icon" href="/icon.svg" type="image/svg+xml">
-    <link rel="apple-touch-icon" href="/icon.png">
+<% content_for :mark do %>
+  <%= link_to "funcooker", root_path %>
+<% end %>
 
-    <%# Includes all stylesheet files in app/assets/stylesheets %>
-    <%= stylesheet_link_tag :app, "data-turbo-track": "reload" %>
-    <%= javascript_importmap_tags %>
-  </head>
+<% content_for :nav do %>
+  <%= nav_link_to "components", components_path, current: controller_name == "components" %>
+  <%= nav_link_to "import", new_recipe_import_path, current: controller_name == "recipe_imports" %>
+<% end %>
 
-  <body>
-    <%= yield %>
-  </body>
-</html>
+<%# Give main the grid when this application's pages are laid out on one:
+    content_for :main_class, "grid" %>
+
+<%= render template: "layouts/its_swiss/shell" %>

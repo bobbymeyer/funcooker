@@ -1,0 +1,24 @@
+<%= page_head "components" do %>
+  <%= link_to "Import a recipe", new_recipe_import_path, class: "button button--primary" %>
+<% end %>
+
+<% if @components.any? %>
+  <table class="table">
+    <thead>
+      <tr>
+        <th scope="col">Name</th>
+        <th scope="col">Dish</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @components.each do |component| %>
+        <tr>
+          <td><%= link_to component.name, component %></td>
+          <td><%= "yes" if component.dish? %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% else %>
+  <p class="empty">No components yet.</p>
+<% end %>

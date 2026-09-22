@@ -1,0 +1,39 @@
+<%= page_head @component.name, lede: @component.description %>
+
+<% if link = @component.source_link %>
+  <p><%= link_to link, link, class: "link-quiet" %></p>
+<% end %>
+
+<h2>ingredients</h2>
+<table class="table">
+  <thead>
+    <tr>
+      <th scope="col">Ingredient</th>
+      <th scope="col" class="numeric">Amount</th>
+      <th scope="col">Unit</th>
+      <th scope="col">Note</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% @component.component_ingredients.includes(:ingredient, :ingredient_family).each do |line| %>
+      <tr>
+        <td><%= (line.ingredient || line.ingredient_family).name %></td>
+        <td class="numeric"><%= number_with_precision(line.quantity, strip_insignificant_zeros: true, precision: 3) %></td>
+        <td><%= line.unit %></td>
+        <td><%= line.note %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+
+<h2>steps</h2>
+<table class="table measure steps">
+  <tbody>
+    <% @component.steps.each do |step| %>
+      <tr>
+        <td class="numeric"><%= step.position %></td>
+        <td><%= step.instructions %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>

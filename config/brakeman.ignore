@@ -1,0 +1,39 @@
+{
+  "ignored_warnings": [
+    {
+      "warning_type": "Cross-Site Scripting",
+      "warning_code": 4,
+      "fingerprint": "47bc7a0fdfd945a3f8751a397d3dce0d2144d6ccd6f2d2c7be78f9f8fd3d9084",
+      "check_name": "LinkToHref",
+      "message": "Potentially unsafe model attribute in `link_to` href",
+      "file": "app/views/components/show.html.erb",
+      "line": 4,
+      "link": "https://brakemanscanner.org/docs/warning_types/link_to_href",
+      "code": "link_to(Component.find(params[:id]).source_link, Component.find(params[:id]).source_link, :class => \"link-quiet\")",
+      "render_path": [
+        {
+          "type": "controller",
+          "class": "ComponentsController",
+          "method": "show",
+          "line": 8,
+          "file": "app/controllers/components_controller.rb",
+          "rendered": {
+            "name": "components/show",
+            "file": "app/views/components/show.html.erb"
+          }
+        }
+      ],
+      "location": {
+        "type": "template",
+        "template": "components/show"
+      },
+      "user_input": "Component.find(params[:id]).source_link",
+      "confidence": "Weak",
+      "cwe_id": [
+        79
+      ],
+      "note": "source_link returns the URL only when it is http(s); Component also validates the format."
+    }
+  ],
+  "brakeman_version": "8.0.6"
+}
