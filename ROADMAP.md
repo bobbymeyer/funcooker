@@ -31,19 +31,40 @@ management, and a scheduler that ties them together.
 
 | Model | Fields / role |
 | --- | --- |
-| `Ingredient` | Canonical raw item — name, category, default unit |
-| `IngredientFamily` | Flat, unranked set of interchangeable `Ingredient`s (e.g. "alliums": shallot, red onion, yellow onion) |
-| `Component` | Modular building block / sub-recipe. Has its own `Step`s. Can nest inside other `Component`s |
-| `Dish` | A `Component` with nothing above it — the thing that gets scheduled and served. Otherwise structurally identical to `Component` |
-| `ComponentIngredient` / `DishComponent` | Join tables — quantity, unit. References either a locked `Ingredient` or a substitutable `IngredientFamily` |
-| `Step` | Belongs to a `Component`/`Dish`. `phase` (`prep`/`plate`), `mode` (`active`/`passive`), duration, consumed ingredients/components |
-| `StockItem` | `Ingredient` or `Component`, quantity, unit, lot info (purchase/prep date, expiry estimate) — lot-tracked like MRP inventory |
-| `StockTransaction` | Delta, source (`receipt`, `manual`, `step_consumption`), link to the `Step` that caused it |
-| `FrozenMealBank` (or a `StockItem` subtype) | Second inventory tier — finished dishes batch-cooked and frozen |
-| `HouseholdMember` | Name |
-| `FoodNeed` | Polymorphic to `Ingredient`/`Component`/`Dish`, `member_id`, `tier`: `restriction` (hard — scheduler never auto-assigns; manual override warns) or `preference` (soft — scoring input only, never blocks) |
-| `ScheduleEntry` | Date, meal slot, `Dish`, status. Re-derived after disruption |
-| `ShoppingListItem` | Derived: `ScheduleEntry` requirements minus `StockItem` on-hand, rounded to purchase units. Exported to iOS Reminders |
+| `Ingredient` | Canonical raw item — `name`, `category`, `default_unit`, optional `ingredient_family` |
+| `IngredientFamily` | Flat, unranked set of interchangeable `Ingredient`s (e.g. "alliums": shallot, red onion, yellow onion). An ingredient belongs to at most one family |
+| `Component` | Modular building block / sub-recipe — `name`, `description`, `source_url`. Has its own `Step`s. Nests inside other `Component`s through `ComponentPart` |
+| Dish | A `Component` that is not the child of any other `Component`. Not a table or subclass: `Component.dishes`, `Component#dish?` |
+| `ComponentPart` | Parent `Component` → child `Component`, `quantity`, `unit`, optional consuming `Step`. No cycles |
+| `ComponentIngredient` | `Component` → exactly one of a locked `Ingredient` or a substitutable `IngredientFamily`, `quantity`, `unit`, `note`, optional consuming `Step` |
+| `Step` | Belongs to a `Component`. `position`, `phase` (`prep`/`plate`), `mode` (`active`/`passive`), `duration_minutes`, `instructions` |
+| `StockItem` | One lot. `stockable` (`Ingredient` or `Component`), `kind`, `quantity`, `unit`, `acquired_on`, `expires_on` |
+| `StockTransaction` | `StockItem`, `delta`, `source` (`receipt`, `manual`, `step_consumption`, `step_production`), optional `Step` |
+| `HouseholdMember` | `name` |
+| `FoodNeed` | `HouseholdMember`, polymorphic `subject` (`Ingredient`, `IngredientFamily`, `Component`), `tier`: `restriction` or `preference` |
+| `ScheduleEntry` | `served_on`, `meal_slot` (`breakfast`/`lunch`/`dinner`), dish, `status` (`planned`/`served`/`skipped`/`swapped`), `restrictions_overridden` |
+| `ShoppingListItem` | Derived, not stored: `ScheduleEntry` requirements minus on-hand `StockItem`s, rounded to purchase units. Exported to iOS Reminders |
+
+### stock kinds
+
+| `kind` | `stockable` |
+| --- | --- |
+| `raw` | `Ingredient` |
+| `prepped` | `Component` |
+| `frozen_meal` | A dish — the freezer bank |
+
+### restrictions
+
+The household eats together, so every member's restrictions apply to every
+`ScheduleEntry`.
+
+| Restricted subject | Violated by |
+| --- | --- |
+| `Component` | Any dish containing it, at any depth |
+| `Ingredient` | A locked slot for that ingredient; a family slot only when every ingredient in the family is restricted |
+| `IngredientFamily` | Any slot for the family, and any locked slot for one of its ingredients |
+
+`preference` never violates.
 
 ## recipe importer
 
@@ -83,13 +104,14 @@ necessarily a dependency).
 
 ## scheduling
 
-- **Manual:** create `ScheduleEntry` rows by hand.
-- **Procedural:** greedy heuristic, not a full constraint solver. Scores
-  candidate dishes by stock/component reuse, expiry pressure, repeat
-  avoidance and `preference` weighting. A `restriction` removes a dish from
-  the candidate set for that member.
-- Both paths check `FoodNeed` restrictions at commit. A manual override that
-  violates a restriction raises a hard warning there, not at plate time.
+- **Procedural:** greedy heuristic, not a full constraint solver. Candidates
+  are `Component.schedulable_for(members)`: dishes that violate no member's
+  restriction. Scores them by stock/component reuse, expiry pressure, repeat
+  avoidance and `preference` weighting. The scheduler never schedules a
+  restricted dish.
+- **Manual:** create `ScheduleEntry` rows by hand. One that violates a
+  restriction fails validation and names the member. It saves only with
+  `restrictions_overridden` set.
 - The schedule re-derives after disruption. No rigid fixed week.
 
 ## freezer bank
@@ -99,6 +121,7 @@ necessarily a dependency).
   entering the scheduled dish's prep/plate flow. No separate energy-check
   step in the scheduler.
 - Populated by batch-cooking: cook once, freeze half.
+- Stored as `StockItem`s with `kind: frozen_meal`.
 
 ## ingredient families
 
@@ -110,8 +133,7 @@ necessarily a dependency).
 
 ## stock, receipts, lot tracking
 
-- `StockTransaction` carries lot info (purchase/prep date, expiry estimate),
-  so "what's near expiry" is queryable and feeds the scheduler's soft
+- Each `StockItem` is a lot with `acquired_on` and `expires_on`, so "what's near expiry" is queryable and feeds the scheduler's soft
   preferences.
 - Receipt photo → same LLM extraction pattern as the recipe importer → line
   items fuzzy-matched to canonical `Ingredient` → confirmation step → batch
@@ -124,11 +146,6 @@ necessarily a dependency).
 - Schedule requirements minus on-hand stock, exported to the iOS Reminders
   grocery list. No custom in-app UI.
 
-## undecided
+## open work
 
-- Mechanics of restriction warnings during procedural scheduling — same
-  check as manual, needs an implementation path.
-- `FrozenMealBank` as its own model vs. a `StockItem` subtype/flag.
-- Calendar integration for prep suggestions (surfacing free blocks, pushing
-  prep tasks as events).
-- Migrations/schema for `Component`/`Dish`.
+- [calendar integration for prep suggestions](https://github.com/bobbymeyer/funcooker/issues/1)
