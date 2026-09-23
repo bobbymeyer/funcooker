@@ -59,8 +59,9 @@ with the reason on its page.
 
 ## schedule
 
-`/schedule` shows the meal up next with **Served**, **Skip** and **I'm
-tired**, a plan form, and the meals from a week back to four weeks ahead.
+`/schedule` shows the meal up next with **Cook**, **Served**, **Skip** and
+**I'm tired**, how many easy meals the freezer bank holds, a plan form, and
+the meals from a week back to four weeks ahead.
 
 **Plan** fills the chosen meals (breakfast, lunch, dinner) over the chosen
 days, one slot at a time in date order, for everyone who eats by default.
@@ -79,13 +80,17 @@ ties go to the dish name.
 | --- | --- | --- |
 | planner | **Plan** | Replaced |
 | hand | **Add a meal**, or any meal edited by hand | Kept |
-| freezer | **I'm tired** | Kept |
+| freezer | **I'm tired**, or **Eat next** in the freezer bank | Kept |
 
 **Skip** marks the meal skipped and derives every planned meal after it again,
 from the stock and dates as they are now. **I'm tired** marks the meal swapped
-and puts in its place, for the same people, the frozen meal that expires
+and puts in its place, for the same people, the frozen dish that expires
 soonest that none of them is restricted from. A lot counted in servings must
-have enough for them.
+have enough for them. A meal from the freezer shows **Reheat** in place of
+**Cook**.
+
+**Served** on a meal whose dish is in stock whole (a frozen dish, say) draws
+its servings from stock. On any other meal it only marks the meal served.
 
 Each meal lists who is eating it and the servings that makes: the sum of
 their portions. A new meal starts with everyone who eats by default; tick
@@ -95,13 +100,19 @@ is something they do not eat. One meal per slot.
 
 ## shelf life
 
-A component's shelf life is how many days it keeps once made; it sets the
-expiry of prepped stock. The model estimates it, conservatively and from
-food-safety guidance, for each imported recipe and each component Decompose
-creates, and on **Estimate shelf life** (one component) or **Estimate missing
-shelf lives** (every component without one). The component page shows the
-days and where they came from (storage and the rule applied). Setting it by
-hand replaces the estimate.
+A component has two shelf lives, both in days: how long it keeps once made,
+which sets the expiry of prepped stock, and how long it keeps frozen, which
+sets the expiry of freezer stock. A freezer life of 0 means it does not
+freeze well (a dressed salad, mayonnaise), and it cannot go in the freezer.
+
+The model estimates both in one call, conservatively and from food-safety
+guidance, for each imported recipe and each component Decompose creates, and
+on **Estimate shelf life** (one component) or **Estimate missing shelf
+lives** (every component missing either). Only a blank one is filled in,
+except with **Estimate again**, which replaces both. The component page shows
+the days and where they came from; the components list shows both. Setting
+either by hand replaces its estimate. An answer that is not a whole number of
+days (above 0 for the fridge, 0 or above for the freezer) is not stored.
 
 ## cook
 
@@ -114,13 +125,16 @@ step can be undone.
 
 | Session | Started from | Steps | Finishing it |
 | --- | --- | --- | --- |
-| Prep | **Plan a prep session** | Every step of each batch, ordered by the model | Adds each batch to stock as a prepped lot, in servings, keeping for the component's shelf life; draws the raw ingredients used |
-| Plate | **Cook** on a scheduled meal | The steps of each component in it not already prepped in stock, innermost first, then the dish's own, in recipe order | Draws the prepped components and raw ingredients used; marks the meal served |
+| Prep | **Plan a prep session** | Every step of each batch, ordered by the model | Adds each batch to stock in servings: a prepped lot keeping for the component's shelf life, and the servings set aside to freeze as a freezer lot keeping for its freezer life; draws the raw ingredients used |
+| Plate | **Cook** (or **Reheat**) on a scheduled meal | The steps of each component in it not already prepped or frozen in stock, innermost first, then the dish's own, in recipe order. None when the dish itself is in stock | Draws the prepped and frozen components and raw ingredients used, or the dish itself; marks the meal served |
 
 The prep planner looks at the meals planned over the next days (7 by
 default) and suggests every component inside their dishes that has steps,
-for the servings those meals need less the prepped servings in stock. Each
-can be unticked or its servings changed, and any other component added.
+for the servings those meals need less the prepped and frozen servings in
+stock. A meal whose dish is in stock whole needs nothing. Each can be
+unticked, its servings changed, or some of them set aside to freeze
+(**Of which, freeze**: cook once, freeze half), and any other component
+added. A component that does not freeze well cannot be set aside.
 
 The model orders a prep session's steps: long passive steps as early as they
 can go, long components first, one active step at a time, grouped by
@@ -205,6 +219,32 @@ photo that yields no items says the same. Pasted text needs neither.
 ## stock
 
 `/stock` lists every lot on hand, soonest to expire first.
+
+## freezer bank
+
+Frozen stock is component stock like prepped stock, only kept in the freezer
+and for longer. A frozen component counts wherever a prepped one does: the
+planner's stock score, the prep planner, the shopping list and cooking all
+draw on it. A frozen dish is an easy meal, the backup plan behind **I'm
+tired**.
+
+`/freezer` shows:
+
+| Section | Lists | Actions |
+| --- | --- | --- |
+| Count | Whole easy meals for everyone who eats by default: each frozen dish's servings over their summed portions, rounded down | |
+| easy meals | Frozen dishes, soonest to expire first, with the meals each makes | **Eat next** swaps the meal up next for this dish, when it feeds that meal's diners. **Thaw** |
+| components | Every other frozen component | **Thaw** |
+| freeze before it turns | Prepped lots expiring within 3 days whose component freezes | **Freeze** |
+
+| Move | Takes | Makes |
+| --- | --- | --- |
+| **Freeze** | Servings of a prepped lot | A freezer lot, keeping for the component's freezer life from today |
+| **Thaw** | Servings of a freezer lot | A prepped lot, keeping for the component's shelf life from today |
+
+Both take any number of servings up to the lot's, and are recorded as
+`freezer` transactions on both lots. Freezer stock can also be added by hand
+from `/stock`.
 
 ## shopping
 

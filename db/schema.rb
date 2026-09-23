@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_23_202814) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_23_205740) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.bigint "blob_id", null: false
     t.datetime "created_at", null: false
@@ -72,6 +72,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_23_202814) do
   create_table "components", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.text "description"
+    t.integer "freezer_life_days"
+    t.string "freezer_life_note"
     t.string "name", null: false
     t.integer "shelf_life_days"
     t.string "shelf_life_note"
@@ -173,11 +175,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_23_202814) do
     t.integer "component_id", null: false
     t.integer "cooking_session_id", null: false
     t.datetime "created_at", null: false
+    t.decimal "frozen_servings", default: "0.0", null: false
+    t.integer "frozen_stock_item_id"
     t.decimal "servings", null: false
     t.integer "stock_item_id"
     t.datetime "updated_at", null: false
     t.index ["component_id"], name: "index_prep_batches_on_component_id"
     t.index ["cooking_session_id"], name: "index_prep_batches_on_cooking_session_id"
+    t.index ["frozen_stock_item_id"], name: "index_prep_batches_on_frozen_stock_item_id"
     t.index ["stock_item_id"], name: "index_prep_batches_on_stock_item_id"
   end
 
@@ -289,6 +294,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_23_202814) do
   add_foreign_key "prep_batches", "components"
   add_foreign_key "prep_batches", "cooking_sessions"
   add_foreign_key "prep_batches", "stock_items"
+  add_foreign_key "prep_batches", "stock_items", column: "frozen_stock_item_id"
   add_foreign_key "receipt_lines", "receipts"
   add_foreign_key "receipt_lines", "stock_items"
   add_foreign_key "recipe_imports", "components"

@@ -8,7 +8,7 @@ class StockItemsController < ApplicationController
   end
 
   def new
-    @stock_item = StockItem.new(acquired_on: Date.current)
+    @stock_item = StockItem.new(acquired_on: Date.current, kind: StockItem.kinds.key?(params[:kind]) ? params[:kind] : :raw)
   end
 
   def create

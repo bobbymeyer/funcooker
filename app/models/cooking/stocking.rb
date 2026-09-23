@@ -1,7 +1,9 @@
 # What finishing a session does to stock. Every component cooked draws its
 # raw ingredient lines, scaled to the servings made; every component inside
-# it that was not cooked is drawn from prepped stock. A prep session then
-# adds each batch as a prepped lot.
+# it that was not cooked is drawn from prepped or frozen stock. A prep
+# session then adds each batch as a prepped lot, and the servings set aside
+# for the freezer as a frozen one. A plate session whose dish came whole from
+# stock (the easy button's frozen meal) draws the dish.
 #
 # Lots are drawn soonest-expiring first, and only in the unit the recipe
 # measures in. What could not be drawn is returned as notes, not guessed at.
@@ -15,18 +17,19 @@ class Cooking::Stocking
 
     session.prep_batches.each do |batch|
       component = batch.component
-      lot = StockItem.create!(
-        stockable: component, kind: :prepped, unit: "serving", acquired_on: Date.current,
-        expires_on: (Date.current + component.shelf_life_days if component.shelf_life_days)
+      batch.update!(
+        stock_item: (produce(component, batch.fridge_servings, :prepped, component.shelf_life_days) if batch.fridge_servings.positive?),
+        frozen_stock_item: (produce(component, batch.frozen_servings, :freezer, component.freezer_life_days) if batch.frozen_servings.positive?)
       )
-      lot.record!(batch.servings, source: :step_production, step: component.steps.last)
-      batch.update!(stock_item: lot)
     end
     @notes
   end
 
   def plate(session)
-    consume(session.tasks.map { |task| [ task.component, task.servings ] }.uniq { |component, _| component.id })
+    cooked = session.tasks.map { |task| [ task.component, task.servings ] }.uniq { |component, _| component.id }
+    dish = session.schedule_entry.dish
+    draw_stocked(dish, session.schedule_entry.servings) unless cooked.any? { |component, _| component == dish }
+    consume(cooked)
     @notes
   end
 
@@ -39,7 +42,7 @@ class Cooking::Stocking
         component.child_parts.includes(:child).each do |part|
           next if cooked_ids.include?(part.child_id)
 
-          draw_prepped(part.child, servings * (Cooking::Meal.serving_unit?(part.unit) ? (part.quantity || 1) : 1))
+          draw_stocked(part.child, servings * (Cooking::Meal.serving_unit?(part.unit) ? (part.quantity || 1) : 1))
         end
       end
     end
@@ -53,8 +56,14 @@ class Cooking::Stocking
       draw(name, lots, line.quantity * servings, line.unit)
     end
 
-    def draw_prepped(component, servings)
-      lots = StockItem.on_hand.prepped.where(stockable: component).order(Arel.sql("expires_on IS NULL"), :expires_on, :id).to_a
+    def produce(component, servings, kind, keeps)
+      lot = StockItem.create!(stockable: component, kind:, unit: "serving", acquired_on: Date.current, expires_on: (Date.current + keeps if keeps))
+      lot.record!(servings, source: :step_production, step: component.steps.last)
+      lot
+    end
+
+    def draw_stocked(component, servings)
+      lots = StockItem.on_hand.stocked.where(stockable: component).first_out.to_a
       draw(component.name, lots, servings, "serving")
     end
 

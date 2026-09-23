@@ -15,7 +15,7 @@ class ComponentsController < ApplicationController
   end
 
   def estimate_shelf_lives
-    missing = Component.where(shelf_life_days: nil).to_a
+    missing = Component.where(shelf_life_days: nil).or(Component.where(freezer_life_days: nil)).to_a
     missing.each(&:estimate_shelf_life_later)
     redirect_to components_path, notice: "Estimating #{helpers.pluralize(missing.size, "shelf life", plural: "shelf lives")}."
   end
@@ -62,6 +62,6 @@ class ComponentsController < ApplicationController
     end
 
     def component_params
-      params.expect(component: %i[ name description source_url shelf_life_days ])
+      params.expect(component: %i[ name description source_url shelf_life_days freezer_life_days ])
     end
 end

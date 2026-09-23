@@ -2,10 +2,12 @@
 #
 # A prep session makes batches of components ahead: its steps are ordered by
 # the model, grouped by technique and station, and finishing it adds each
-# batch to stock as a prepped lot and draws the raw ingredients it used.
+# batch to stock as a prepped lot (the servings set aside for the freezer as
+# a frozen one) and draws the raw ingredients it used.
 #
 # A plate session cooks one scheduled meal: the steps of anything in it that
-# is not already prepped in stock, then the dish's own, in recipe order.
+# is not already prepped or frozen in stock, then the dish's own, in recipe
+# order. A dish in stock whole (a frozen meal) has no steps: it is reheated.
 # Finishing it draws what the meal used and marks the meal served.
 class CookingSession < ApplicationRecord
   belongs_to :schedule_entry, optional: true
@@ -21,12 +23,12 @@ class CookingSession < ApplicationRecord
 
   after_create_commit -> { CookingSequenceJob.perform_later(self) }, if: :sequencing?
 
-  # batches: [{ component:, servings: }]
+  # batches: [{ component:, servings:, frozen_servings: }]
   def self.prep!(batches)
     transaction do
       create!(kind: :prep, status: :sequencing).tap do |session|
         batches.each do |batch|
-          session.prep_batches.create!(component: batch[:component], servings: batch[:servings])
+          session.prep_batches.create!(component: batch[:component], servings: batch[:servings], frozen_servings: batch[:frozen_servings] || 0)
           batch[:component].steps.each { |step| session.tasks.build(step:, servings: batch[:servings], position: 0, cluster: batch[:component].name) }
         end
         session.tasks.each.with_index(1) { |task, position| task.position = position }

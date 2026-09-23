@@ -10,6 +10,7 @@ class CookingSessionsController < ApplicationController
   def new
     @days = (params[:days] || 7).to_i.clamp(1, 28)
     @suggestions = Cooking::PrepPlan.new(days: @days).suggestions
+    @easy_meals = StockItem.easy_meals.count
   end
 
   def create
@@ -17,8 +18,9 @@ class CookingSessionsController < ApplicationController
       next unless batch[:include] == "1"
 
       servings = batch[:servings].to_d rescue 0
+      frozen_servings = batch[:frozen_servings].to_d rescue 0
       component = Component.find_by(id: batch[:component_id])
-      { component:, servings: } if component && servings.positive?
+      { component:, servings:, frozen_servings: } if component && servings.positive?
     end
 
     if batches.empty?
@@ -26,6 +28,8 @@ class CookingSessionsController < ApplicationController
     else
       redirect_to CookingSession.prep!(batches)
     end
+  rescue ActiveRecord::RecordInvalid => e
+    redirect_to new_cooking_session_path, alert: e.record.errors.full_messages.to_sentence
   end
 
   def show

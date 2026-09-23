@@ -76,8 +76,8 @@ class ScheduleEntryTest < ActiveSupport::TestCase
   test "the easy button swaps in the frozen meal that expires soonest" do
     lasagne = Component.create!(name: "lasagne")
     soup = Component.create!(name: "soup")
-    StockItem.create!(stockable: lasagne, kind: :frozen_meal, quantity: 4, expires_on: Date.current + 30)
-    StockItem.create!(stockable: soup, kind: :frozen_meal, quantity: 4, expires_on: Date.current + 10)
+    StockItem.create!(stockable: lasagne, kind: :freezer, quantity: 4, expires_on: Date.current + 30)
+    StockItem.create!(stockable: soup, kind: :freezer, quantity: 4, expires_on: Date.current + 10)
     entry = ScheduleEntry.create!(served_on: Date.current, dish: @dish)
 
     swap = entry.ease!
@@ -90,8 +90,8 @@ class ScheduleEntryTest < ActiveSupport::TestCase
     HouseholdMember.create!(name: "teen", portion: 1.5)
     small = Component.create!(name: "small soup")
     big = Component.create!(name: "big stew")
-    StockItem.create!(stockable: small, kind: :frozen_meal, quantity: 2, unit: "serving", expires_on: Date.current + 1)
-    StockItem.create!(stockable: big, kind: :frozen_meal, quantity: 3, unit: "servings", expires_on: Date.current + 5)
+    StockItem.create!(stockable: small, kind: :freezer, quantity: 2, unit: "serving", expires_on: Date.current + 1)
+    StockItem.create!(stockable: big, kind: :freezer, quantity: 3, unit: "servings", expires_on: Date.current + 5)
     entry = ScheduleEntry.create!(served_on: Date.current, dish: @dish)
 
     swap = entry.ease!
@@ -101,7 +101,7 @@ class ScheduleEntryTest < ActiveSupport::TestCase
   end
 
   test "the easy button skips frozen meals someone cannot eat" do
-    StockItem.create!(stockable: Component.create!(name: "beef stew"), kind: :frozen_meal, quantity: 4)
+    StockItem.create!(stockable: Component.create!(name: "beef stew"), kind: :freezer, quantity: 4)
     @kid.food_needs.create!(subject: Component.find_by!(name: "beef stew"), tier: :restriction)
     entry = ScheduleEntry.create!(served_on: Date.current, dish: @dish)
 

@@ -2,8 +2,8 @@
 # each meal's servings, less what is on hand, rounded up to whole packs where
 # an ingredient's pack size is known.
 #
-# Meals are taken in date order. A component already prepped in stock covers
-# as many servings as it has, meal by meal; the rest is cooked, and so needs
+# Meals are taken in date order. A component (or a whole dish) already
+# prepped or frozen in stock covers as many servings as it has, meal by meal; the rest is cooked, and so needs
 # its ingredients. Stock on hand is subtracted only in the unit the recipe
 # measures in: an ingredient needed in cups and stocked in pounds is listed,
 # with a note, not converted.
@@ -52,9 +52,9 @@ class ShoppingList
 
   private
     def build
-      @prepped = StockItem.on_hand.prepped.select { |lot| Cooking::Meal.serving_unit?(lot.unit) }.group_by(&:stockable_id).transform_values { |lots| lots.sum(&:quantity) }
+      @prepped = StockItem.on_hand.stocked.select { |lot| Cooking::Meal.serving_unit?(lot.unit) }.group_by(&:stockable_id).transform_values { |lots| lots.sum(&:quantity) }
       @needs = {}
-      entries.each { |entry| need(entry.dish, entry.servings, entry) }
+      entries.each { |entry| need(entry.dish, cover(entry.dish, entry.servings), entry) }
 
       @stock = Hash.new(0)
       StockItem.on_hand.raw.each { |lot| @stock[[ lot.stockable_id, normalize(lot.unit) ]] += lot.quantity }
@@ -69,9 +69,7 @@ class ShoppingList
 
       component.child_parts.includes(:child).each do |part|
         child_servings = servings * (Cooking::Meal.serving_unit?(part.unit) ? (part.quantity || 1) : 1)
-        covered = [ @prepped.fetch(part.child_id, 0), child_servings ].min
-        @prepped[part.child_id] = @prepped.fetch(part.child_id, 0) - covered
-        need(part.child, child_servings - covered, entry)
+        need(part.child, cover(part.child, child_servings), entry)
       end
 
       component.component_ingredients.includes(:ingredient, ingredient_family: :ingredients).each do |line|
@@ -83,6 +81,14 @@ class ShoppingList
         line.quantity ? need[:amount] += line.quantity * servings : need[:to_taste] = true
         need[:meals] << entry
       end
+    end
+
+    # Takes what stock has of the component, prepped or frozen, toward the
+    # servings; returns the servings still to make.
+    def cover(component, servings)
+      covered = [ @prepped.fetch(component.id, 0), servings ].min
+      @prepped[component.id] = @prepped.fetch(component.id, 0) - covered
+      servings - covered
     end
 
     def item_for(need)

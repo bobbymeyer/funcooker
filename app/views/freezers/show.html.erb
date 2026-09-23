@@ -1,0 +1,102 @@
+<%= page_head "freezer bank", lede: "Components made ahead that keep for months, and the dishes among them: the backup plan for a night nobody wants to cook." do %>
+  <%= link_to "Plan a prep session", new_cooking_session_path, class: "button" %>
+  <%= link_to "Add by hand", new_stock_item_path(kind: "freezer"), class: "button button--quiet" %>
+<% end %>
+
+<% meals = @meals.sum { |lot| meals_in(lot, @portions) } %>
+<p class="freezer__count">
+  <% if @household.any? %>
+    <strong><%= pluralize(meals, "easy meal") %></strong> for <%= @household.map(&:name).sort.to_sentence %> (<%= pluralize(quantity(@portions), "serving") %> a meal).
+  <% else %>
+    <strong><%= pluralize(@meals.size, "frozen dish", plural: "frozen dishes") %></strong>. Add the household to count them in meals.
+  <% end %>
+</p>
+
+<h2>easy meals</h2>
+<% if @meals.any? %>
+  <table class="table">
+    <thead>
+      <tr>
+        <th scope="col">Dish</th>
+        <th scope="col" class="numeric">Quantity</th>
+        <th scope="col" class="numeric">Meals</th>
+        <th scope="col">Keeps</th>
+        <th scope="col"><span class="visually-hidden">Actions</span></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @meals.each do |lot| %>
+        <tr class="<%= "stock--expired" if lot.expires_on && lot.expires_on < Date.current %>">
+          <td><%= link_to lot.stockable.name, lot.stockable %></td>
+          <td class="numeric"><%= amount_of(lot) %></td>
+          <td class="numeric"><%= meals_in(lot, @portions) %></td>
+          <td><%= keeps_until(lot.expires_on) %></td>
+          <td class="run">
+            <% if @up_next && lot.feeds?(@up_next_diners) %>
+              <%= button_to "Eat next", ease_schedule_entry_path(@up_next, stock_item_id: lot), class: "button button--quiet", title: "Instead of #{@up_next.dish.name}, #{l(@up_next.served_on, format: :long)}" %>
+            <% end %>
+            <%= render "freezers/move", lot:, label: "Thaw", path: stock_item_thawing_path(lot) %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+  <% if @up_next %>
+    <p class="hint">Eat next swaps <%= @up_next.dish.name %> (<%= l(@up_next.served_on, format: :long) %>, <%= @up_next.meal_slot %>) for the frozen dish, as the schedule's easy button does with the one that expires soonest.</p>
+  <% end %>
+<% else %>
+  <p class="empty">No meals in the freezer. When planning prep, freeze part of a dish's batch: cook once, freeze half.</p>
+<% end %>
+
+<h2>components</h2>
+<% if @components.any? %>
+  <table class="table">
+    <thead>
+      <tr>
+        <th scope="col">Component</th>
+        <th scope="col" class="numeric">Quantity</th>
+        <th scope="col">Keeps</th>
+        <th scope="col"><span class="visually-hidden">Actions</span></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @components.each do |lot| %>
+        <tr class="<%= "stock--expired" if lot.expires_on && lot.expires_on < Date.current %>">
+          <td><%= link_to lot.stockable.name, lot.stockable %></td>
+          <td class="numeric"><%= amount_of(lot) %></td>
+          <td><%= keeps_until(lot.expires_on) %></td>
+          <td class="run"><%= render "freezers/move", lot:, label: "Thaw", path: stock_item_thawing_path(lot) %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+  <p class="hint">Frozen components count toward meals like prepped ones: the planner, prep plan, shopping list and cooking all draw on them. Thaw moves servings to the fridge, keeping as long as the component keeps prepped.</p>
+<% else %>
+  <p class="empty">No frozen components.</p>
+<% end %>
+
+<% if @worth_freezing.any? %>
+  <h2>freeze before it turns</h2>
+  <table class="table">
+    <thead>
+      <tr>
+        <th scope="col">Prepped</th>
+        <th scope="col" class="numeric">Quantity</th>
+        <th scope="col">Keeps</th>
+        <th scope="col">Frozen, keeps</th>
+        <th scope="col"><span class="visually-hidden">Actions</span></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @worth_freezing.each do |lot| %>
+        <tr>
+          <td><%= link_to lot.stockable.name, lot.stockable %></td>
+          <td class="numeric"><%= amount_of(lot) %></td>
+          <td><%= keeps_until(lot.expires_on) %></td>
+          <td><%= lot.stockable.freezer_life_days ? pluralize(lot.stockable.freezer_life_days, "day") : "not estimated" %></td>
+          <td class="run"><%= render "freezers/move", lot:, label: "Freeze", path: stock_item_freezing_path(lot) %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% end %>

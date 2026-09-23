@@ -1,11 +1,11 @@
 <%= its_swiss_form_with model: stock_item, url: stock_item.new_record? ? stock_items_path : stock_item_path(stock_item), class: "form measure" do |form| %>
   <%= render "its_swiss/shared/errors", record: stock_item %>
   <%= form.select :kind, StockItem.kinds.keys.map { |kind| [ kind.humanize(capitalize: false), kind ] }, {},
-        hint: "Raw is an ingredient; prepped and frozen meal are components." %>
+        hint: "Raw is an ingredient; prepped (in the fridge) and freezer are components." %>
   <%= form.text_field :ingredient_name, label: "Ingredient", list: "ingredient-names", hint: "For raw stock." %>
   <%= ingredient_datalist %>
   <%= form.collection_select :component_id, Component.order(:name), :id, :name, { include_blank: "—" },
-        label: "Or component", hint: "For prepped stock, or a dish for the freezer bank." %>
+        label: "Or component", hint: "For prepped or freezer stock. A frozen dish is an easy meal." %>
   <%= form.number_field :quantity, step: "any", hint: stock_item.persisted? ? "A change is recorded as a manual transaction." : nil %>
   <%= form.text_field :unit %>
   <%= form.date_field :acquired_on %>

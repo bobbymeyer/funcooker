@@ -106,9 +106,41 @@ class ScheduleEntriesControllerTest < ActionDispatch::IntegrationTest
     post ease_schedule_entry_path(entry)
     assert_equal "Nothing in the freezer bank for this meal.", flash[:alert]
 
-    StockItem.create!(stockable: @curry, kind: :frozen_meal, quantity: 2)
+    StockItem.create!(stockable: @curry, kind: :freezer, quantity: 2)
     post ease_schedule_entry_path(entry)
     assert entry.reload.swapped?
     assert_equal @curry, ScheduleEntry.easy.last.dish
+  end
+
+  test "ease with a particular frozen dish, and serving it draws it from the freezer" do
+    HouseholdMember.create!(name: "Bobby")
+    entry = ScheduleEntry.create!(served_on: Date.current, dish: @chili)
+    stew = Component.create!(name: "beef stew")
+    StockItem.create!(stockable: @curry, kind: :freezer, quantity: 2, unit: "serving", expires_on: Date.current + 5)
+    lot = StockItem.create!(stockable: stew, kind: :freezer, quantity: 3, unit: "serving", expires_on: Date.current + 50)
+
+    post ease_schedule_entry_path(entry, stock_item_id: lot)
+    assert_equal "Swapped for beef stew from the freezer.", flash[:notice]
+    eased = ScheduleEntry.easy.sole
+    assert_equal stew, eased.dish
+
+    get schedule_entries_path
+    assert_select "button", "Reheat"
+    assert_select "button", text: "I'm tired", count: 0
+
+    post serve_schedule_entry_path(eased)
+    assert eased.reload.served?
+    assert_equal 2, lot.reload.quantity
+  end
+
+  test "ease with a frozen dish that does not feed the meal says so" do
+    member = HouseholdMember.create!(name: "Bobby", portion: 2)
+    entry = ScheduleEntry.create!(served_on: Date.current, dish: @chili)
+    lot = StockItem.create!(stockable: @curry, kind: :freezer, quantity: 1, unit: "serving")
+
+    post ease_schedule_entry_path(entry, stock_item_id: lot)
+
+    assert_equal "curry does not make a meal for #{member.name}.", flash[:alert]
+    assert entry.reload.planned?
   end
 end

@@ -15,6 +15,7 @@
         <th scope="col">Prep</th>
         <th scope="col">Component</th>
         <th scope="col">Servings</th>
+        <th scope="col">Of which, freeze</th>
       </tr>
     </thead>
     <tbody>
@@ -27,6 +28,7 @@
           </td>
           <td><%= link_to component.name, component %></td>
           <td><%= number_field_tag "batches[#{index}][servings]", quantity(servings), step: "any", min: 0, "aria-label": "Servings of #{component.name}" %></td>
+          <td><%= number_field_tag "batches[#{index}][frozen_servings]", 0, step: "any", min: 0, disabled: !component.freezable?, "aria-label": "Servings of #{component.name} to freeze" %></td>
         </tr>
       <% end %>
       <% extra = @suggestions.size %>
@@ -36,12 +38,14 @@
           <%= check_box_tag "batches[#{extra}][include]", "1", @suggestions.empty?, "aria-label": "Prep another component" %>
         </td>
         <td><%= select_tag "batches[#{extra}][component_id]", options_from_collection_for_select(Component.joins(:steps).distinct.order(:name), :id, :name), include_blank: "Another component…", "aria-label": "Another component" %></td>
-        <td><%= number_field_tag "batches[#{extra}][servings]", 4, step: "any", min: 0, "aria-label": "Servings of another component" %></td>
+        <td><%= number_field_tag "batches[#{extra}][servings]", 8, step: "any", min: 0, "aria-label": "Servings of another component" %></td>
+        <td><%= number_field_tag "batches[#{extra}][frozen_servings]", 4, step: "any", min: 0, "aria-label": "Servings of another component to freeze" %></td>
       </tr>
     </tbody>
   </table>
   <% if @suggestions.empty? %>
     <p class="hint">Nothing planned needs prepping ahead. Pick a component to batch anyway.</p>
   <% end %>
+  <p class="hint">Servings to freeze go to the <%= link_to "freezer bank", freezer_path %> instead of the fridge: cook once, freeze half. A dish frozen is an easy meal for a tired night.<% if @easy_meals.zero? %> The freezer has none right now.<% end %></p>
   <%= form.submit "Start prep", class: "button button--primary" %>
 <% end %>
