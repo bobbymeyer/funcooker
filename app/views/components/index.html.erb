@@ -1,7 +1,12 @@
 <%= page_head "components" do %>
   <%= link_to "Import a recipe", new_recipe_import_path, class: "button button--primary" %>
   <%= link_to "New component", new_component_path, class: "button" %>
+  <%= button_to "Estimate missing shelf lives", estimate_shelf_lives_components_path, class: "button button--quiet" %>
 <% end %>
+
+<div class="filters">
+  <%= filter_register "Show", ComponentsController::FILTERS.map { |key, label| [ label, components_path(show: (key unless key == "all")), key == @filter ] }, name: "show" %>
+</div>
 
 <% if @components.any? %>
   <table class="table">
@@ -9,6 +14,7 @@
       <tr>
         <th scope="col">Name</th>
         <th scope="col">Dish</th>
+        <th scope="col" class="numeric">Keeps</th>
       </tr>
     </thead>
     <tbody>
@@ -16,10 +22,11 @@
         <tr>
           <td><%= link_to component.name, component %></td>
           <td><%= "yes" if component.dish? %></td>
+          <td class="numeric"><%= "#{component.shelf_life_days} d" if component.shelf_life_days %></td>
         </tr>
       <% end %>
     </tbody>
   </table>
 <% else %>
-  <p class="empty">No components yet.</p>
+  <p class="empty">None here.</p>
 <% end %>

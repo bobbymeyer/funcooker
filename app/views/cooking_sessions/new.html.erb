@@ -1,0 +1,47 @@
+<%= page_head "plan a prep session", lede: "Components worth making ahead for the meals planned in the next #{pluralize(@days, "day")}, less what is already prepped." %>
+
+<%= form_with url: new_cooking_session_path, method: :get, class: "form form--inline" do |form| %>
+  <div class="field field--inline">
+    <%= form.label :days, "Days ahead" %>
+    <%= form.number_field :days, value: @days, min: 1, max: 28 %>
+  </div>
+  <%= form.submit "Look ahead", class: "button button--quiet", name: nil %>
+<% end %>
+
+<%= form_with url: cooking_sessions_path, class: "form form--dense" do |form| %>
+  <table class="table">
+    <thead>
+      <tr>
+        <th scope="col">Prep</th>
+        <th scope="col">Component</th>
+        <th scope="col">Servings</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @suggestions.each_with_index do |(component, servings), index| %>
+        <tr>
+          <td>
+            <%= hidden_field_tag "batches[#{index}][component_id]", component.id %>
+            <%= hidden_field_tag "batches[#{index}][include]", "0", id: nil %>
+            <%= check_box_tag "batches[#{index}][include]", "1", true, "aria-label": "Prep #{component.name}" %>
+          </td>
+          <td><%= link_to component.name, component %></td>
+          <td><%= number_field_tag "batches[#{index}][servings]", quantity(servings), step: "any", min: 0, "aria-label": "Servings of #{component.name}" %></td>
+        </tr>
+      <% end %>
+      <% extra = @suggestions.size %>
+      <tr>
+        <td>
+          <%= hidden_field_tag "batches[#{extra}][include]", "0", id: nil %>
+          <%= check_box_tag "batches[#{extra}][include]", "1", @suggestions.empty?, "aria-label": "Prep another component" %>
+        </td>
+        <td><%= select_tag "batches[#{extra}][component_id]", options_from_collection_for_select(Component.joins(:steps).distinct.order(:name), :id, :name), include_blank: "Another component…", "aria-label": "Another component" %></td>
+        <td><%= number_field_tag "batches[#{extra}][servings]", 4, step: "any", min: 0, "aria-label": "Servings of another component" %></td>
+      </tr>
+    </tbody>
+  </table>
+  <% if @suggestions.empty? %>
+    <p class="hint">Nothing planned needs prepping ahead. Pick a component to batch anyway.</p>
+  <% end %>
+  <%= form.submit "Start prep", class: "button button--primary" %>
+<% end %>

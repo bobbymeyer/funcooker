@@ -3,5 +3,6 @@
   <%= form.text_field :name %>
   <%= form.text_area :description, rows: 3 %>
   <%= form.url_field :source_url, label: "Source URL" %>
+  <%= form.number_field :shelf_life_days, label: "Keeps for (days)", hint: "Once prepped. Sets the expiry of prepped stock." %>
   <%= form.submit %>
 <% end %>

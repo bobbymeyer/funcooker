@@ -10,8 +10,10 @@ class Decomposition::Rewrite
       [ "i#{index + 1}", line.attributes.slice("ingredient_id", "ingredient_family_id", "quantity", "unit", "note").symbolize_keys ]
     end
     @used = Set.new
+    @created = []
   end
 
+  # Returns the components it created.
   def apply
     @component.component_ingredients.destroy_all
     @component.steps.destroy_all
@@ -27,6 +29,7 @@ class Decomposition::Rewrite
         consumed.update!(step:) if consumed && consumed.step_id.nil?
       end
     end
+    @created
   end
 
   private
@@ -56,6 +59,7 @@ class Decomposition::Rewrite
 
     def build_component(planned)
       Component.create!(name: planned[:name].to_s.squish.presence || "part of #{@component.name}").tap do |child|
+        @created << child
         planned[:ingredients].each { |ref| add_line(child, ref) }
         Array(planned[:steps]).each.with_index(1) { |step, position| child.steps.create!(position:, **step_attributes(step)) }
       end

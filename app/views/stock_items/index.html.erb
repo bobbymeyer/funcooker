@@ -1,38 +1,20 @@
-<%= page_head "stock", lede: "Every lot on hand, soonest to expire first." do %>
+<%= page_head "stock", lede: "First out first: what expires soonest is used before the rest." do %>
   <%= link_to "Add a receipt", new_receipt_path, class: "button button--primary" %>
   <%= link_to "Add by hand", new_stock_item_path, class: "button" %>
 <% end %>
 
-<% if @stock_items.any? %>
-  <table class="table">
-    <thead>
-      <tr>
-        <th scope="col">Item</th>
-        <th scope="col">Kind</th>
-        <th scope="col" class="numeric">Quantity</th>
-        <th scope="col">Unit</th>
-        <th scope="col">Acquired</th>
-        <th scope="col">Keeps until</th>
-        <th scope="col"><span class="visually-hidden">Actions</span></th>
-      </tr>
-    </thead>
-    <tbody>
-      <% @stock_items.each do |item| %>
-        <tr>
-          <td><%= item.stockable.name %></td>
-          <td><%= item.kind.humanize(capitalize: false) %></td>
-          <td class="numeric"><%= quantity(item.quantity) %></td>
-          <td><%= item.unit %></td>
-          <td><%= l(item.acquired_on, format: :long) if item.acquired_on %></td>
-          <td><%= l(item.expires_on, format: :long) if item.expires_on %></td>
-          <td class="run">
-            <%= link_to "Edit", edit_stock_item_path(item), class: "link-quiet" %>
-            <%= delete_button stock_item_path(item), quiet: true, confirm: "Delete this #{item.stockable.name} lot?" %>
-          </td>
-        </tr>
-      <% end %>
-    </tbody>
-  </table>
-<% else %>
+<% use_first, rest = @stock_items.partition { |item| item.expires_on && item.expires_on <= Date.current + StockItemsController::USE_FIRST_DAYS } %>
+
+<% if use_first.any? %>
+  <h2>use first</h2>
+  <%= render "stock_items/table", items: use_first %>
+<% end %>
+
+<% if rest.any? %>
+  <h2><%= use_first.any? ? "then" : "on hand" %></h2>
+  <%= render "stock_items/table", items: rest %>
+<% end %>
+
+<% if @stock_items.empty? %>
   <p class="empty">Nothing in stock.</p>
 <% end %>

@@ -12,11 +12,23 @@ class Component < ApplicationRecord
   has_many :schedule_entries, foreign_key: :dish_id, dependent: :restrict_with_error, inverse_of: :dish
   has_many :decompositions, dependent: :destroy
   has_many :recipe_imports, dependent: :nullify
+  has_many :prep_batches, dependent: :destroy
 
   validates :name, presence: true
+  validates :shelf_life_days, numericality: { only_integer: true, greater_than: 0 }, allow_nil: true
   validates :source_url, format: { with: %r{\Ahttps?://\S+\z} }, allow_blank: true
 
   scope :dishes, -> { where.not(id: ComponentPart.select(:child_id)) }
+  scope :parts, -> { where(id: ComponentPart.select(:child_id)) }
+
+  broadcasts_refreshes
+
+  # A shelf life set by hand is not the model's any more, so its note goes.
+  before_update -> { self.shelf_life_note = nil }, if: -> { shelf_life_days_changed? && !shelf_life_note_changed? }
+
+  def estimate_shelf_life_later(overwrite: false)
+    ShelfLifeJob.perform_later(self, overwrite:)
+  end
 
   # Dishes the procedural scheduler may pick: none that would violate a
   # restriction for any of the members eating.
@@ -29,9 +41,10 @@ class Component < ApplicationRecord
     source_url if source_url.to_s.match?(%r{\Ahttps?://\S+\z})
   end
 
-  # A recipe not yet broken into components, with ingredients to break out.
+  # A recipe not yet broken into components, with ingredients to break out,
+  # and no borderline judgement waiting on a decision.
   def decomposable?
-    !child_parts.exists? && component_ingredients.exists?
+    !child_parts.exists? && component_ingredients.exists? && !decompositions.awaiting.exists?
   end
 
   def dish?

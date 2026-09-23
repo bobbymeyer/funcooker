@@ -1,8 +1,23 @@
 class ComponentsController < ApplicationController
   before_action :set_component, only: %i[ show edit update destroy ]
 
+  FILTERS = { "all" => "All", "dishes" => "Dishes", "parts" => "Parts of dishes" }.freeze
+
   def index
-    @components = Component.order(:name)
+    @filter = FILTERS.key?(params[:show]) ? params[:show] : "all"
+    @components = { "all" => Component.all, "dishes" => Component.dishes, "parts" => Component.parts }.fetch(@filter).order(:name)
+  end
+
+  def estimate_shelf_life
+    component = Component.find(params[:id])
+    component.estimate_shelf_life_later(overwrite: true)
+    redirect_to component, notice: "Estimating how long it keeps. This page updates when it is done."
+  end
+
+  def estimate_shelf_lives
+    missing = Component.where(shelf_life_days: nil).to_a
+    missing.each(&:estimate_shelf_life_later)
+    redirect_to components_path, notice: "Estimating #{helpers.pluralize(missing.size, "shelf life", plural: "shelf lives")}."
   end
 
   def show
@@ -47,6 +62,6 @@ class ComponentsController < ApplicationController
     end
 
     def component_params
-      params.expect(component: %i[ name description source_url ])
+      params.expect(component: %i[ name description source_url shelf_life_days ])
     end
 end

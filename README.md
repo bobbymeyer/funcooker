@@ -19,9 +19,9 @@ Every record the app shows can be created, edited and deleted.
 
 | Page | |
 | --- | --- |
-| `/components` | New, edit and delete components. On a component: add, edit and remove its ingredient lines (an ingredient by name, or any of a family), steps (position, prep or plate, active or passive, minutes) and sub-components. Deleting a component takes its lines and steps with it; one used inside another, in stock or on the schedule is not deleted |
+| `/components` | Filter for all, dishes only, or parts of dishes. New, edit and delete components. On a component: add, edit and remove its ingredient lines (an ingredient by name, or any of a family), steps (position, prep or plate, active or passive, minutes) and sub-components. Deleting a component takes its lines and steps with it; one used inside another, in stock or on the schedule is not deleted |
 | `/ingredients` | New, edit and delete ingredients, and their families under **Families**. An ingredient used in a recipe or in stock is not deleted; deleting a family keeps its ingredients |
-| `/stock` | Add a lot by hand, edit or delete one. A lot's quantity only changes through a `StockTransaction`: one entered or corrected by hand is `manual` |
+| `/stock` | First out first: lots expired or expiring within 3 days under **use first**, the rest after, each in expiry order with the days left. Add a lot by hand, edit or delete one. A lot's quantity only changes through a `StockTransaction`: one entered or corrected by hand is `manual` |
 | `/receipts` | Delete a receipt. What was stocked from it stays |
 | `/recipe_imports` | Past imports; delete one. The recipe it made stays |
 
@@ -93,6 +93,46 @@ anyone else in on the meals they come to. A dish anyone at the meal is
 restricted from is refused, naming them. There is no override: a restriction
 is something they do not eat. One meal per slot.
 
+## shelf life
+
+A component's shelf life is how many days it keeps once made; it sets the
+expiry of prepped stock. The model estimates it, conservatively and from
+food-safety guidance, for each imported recipe and each component Decompose
+creates, and on **Estimate shelf life** (one component) or **Estimate missing
+shelf lives** (every component without one). The component page shows the
+days and where they came from (storage and the rule applied). Setting it by
+hand replaces the estimate.
+
+## cook
+
+`/cook` lists cooking sessions. Both kinds are walked the same way: one step
+at a time in large type, with that step's ingredients scaled to the servings
+(a step that names none shows the whole component's, on its first step).
+**Done** moves on. A passive step with a time has **Start**: it moves to the
+countdown strip at the top, which stacks, and is marked done from there. Any
+step can be undone.
+
+| Session | Started from | Steps | Finishing it |
+| --- | --- | --- | --- |
+| Prep | **Plan a prep session** | Every step of each batch, ordered by the model | Adds each batch to stock as a prepped lot, in servings, keeping for the component's shelf life; draws the raw ingredients used |
+| Plate | **Cook** on a scheduled meal | The steps of each component in it not already prepped in stock, innermost first, then the dish's own, in recipe order | Draws the prepped components and raw ingredients used; marks the meal served |
+
+The prep planner looks at the meals planned over the next days (7 by
+default) and suggests every component inside their dishes that has steps,
+for the servings those meals need less the prepped servings in stock. Each
+can be unticked or its servings changed, and any other component added.
+
+The model orders a prep session's steps: long passive steps as early as they
+can go, long components first, one active step at a time, grouped by
+technique or station. Each component's steps are then put back in their
+recipe order within the places they got, and any step it dropped is
+appended. If the model cannot be reached, the session says why and can be
+cooked in recipe order instead.
+
+Stock is drawn soonest-expiring first, and only from lots in the unit the
+recipe measures in. What could not be drawn (none in stock, a different
+unit, or too little) is listed on the finished session rather than guessed.
+
 ## household
 
 `/household` lists who eats.
@@ -120,8 +160,17 @@ in a background job.
 | The recipe | Keeps only the lines it uses directly, and its steps are rewritten to use the components. A line the model leaves unused stays on the recipe |
 | Steps | Every step, new or rewritten, is marked prep or plate, active or passive, with an estimated time. Each component used is linked to the step that uses it |
 
-The recipe's ingredients and steps as they were are kept on the
-`Decomposition`. A component and anything it is part of are never offered for
+The model judges the recipe before breaking it up:
+
+| Verdict | When | What happens |
+| --- | --- | --- |
+| decompose | It has parts that can be made ahead with nothing lost | The rewrite is applied |
+| atomic | Nothing in it can meaningfully be made on its own, or its parts only work cooked together | Nothing changes; the component page says why |
+| borderline | A part could be made apart, at a cost to the dish (braising a bolognese's meat on its own loses the fond) | Nothing changes yet; the component page shows what would break out and each thing the dish loses, with **Decompose anyway** and **Leave it** |
+
+A borderline plan is only applied to the recipe as it was judged; one edited
+since has to be decomposed again. The recipe's ingredients and steps as they
+were are kept on the `Decomposition`. A component and anything it is part of are never offered for
 reuse inside it. If the model finds nothing to break out, or names a component
 that does not exist, nothing changes and the reason is shown.
 

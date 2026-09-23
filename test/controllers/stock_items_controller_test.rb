@@ -43,4 +43,20 @@ class StockItemsControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to stock_items_path
     assert_not StockItem.exists?(lot.id)
   end
+
+  test "what expires soonest is listed first, under use first" do
+    rice = Ingredient.create!(name: "rice")
+    milk = Ingredient.create!(name: "milk")
+    StockItem.create!(stockable: rice, kind: :raw, quantity: 1, expires_on: Date.current + 30)
+    StockItem.create!(stockable: milk, kind: :raw, quantity: 1, expires_on: Date.current + 1)
+    StockItem.create!(stockable: Ingredient.create!(name: "old bread"), kind: :raw, quantity: 1, expires_on: Date.current - 2)
+
+    get stock_items_path
+
+    assert_select "h2", "use first"
+    assert_select "h2 + table tbody tr:first-child td", "old bread"
+    assert_select "tr.stock--expired td", "expired 2 days ago"
+    assert_select "td", "tomorrow"
+    assert_select "h2", "then"
+  end
 end

@@ -1,0 +1,86 @@
+<%= turbo_stream_from @session %>
+
+<% running = @session.running_tasks %>
+<% if running.any? %>
+  <div class="timers" aria-label="Running">
+    <% running.each do |task| %>
+      <div class="timers__item">
+        <span><%= task.instructions.truncate(50) %></span>
+        <% if task.ends_at %>
+          <strong data-controller="timer" data-timer-ends-at-value="<%= task.ends_at.iso8601 %>"><%= distance_of_time_in_words(Time.current, task.ends_at) %></strong>
+        <% end %>
+        <%= button_to "Done", complete_cooking_task_path(task), class: "button button--quiet" %>
+      </div>
+    <% end %>
+  </div>
+<% end %>
+
+<%= page_head @session.title, lede: @session.prep? ? @session.prep_batches.map { |batch| "#{batch.component.name} ×#{quantity(batch.servings)}" }.join(", ") : "#{pluralize(quantity(@session.schedule_entry.servings), "serving")}, #{@session.schedule_entry.diners.map(&:name).sort.to_sentence}" %>
+
+<% case @session.status %>
+<% when "sequencing" %>
+  <p class="empty">Ordering the steps. This page updates when it is done.</p>
+<% when "failed" %>
+  <p class="errors"><%= @session.error %></p>
+  <%= button_to "Cook in recipe order instead", recipe_order_cooking_session_path(@session), class: "button" %>
+<% when "ready" %>
+  <% if (task = @session.current_task) %>
+    <% done = @session.tasks.count(&:completed?) + running.size %>
+    <section class="step" aria-live="polite">
+      <p class="hint">Step <%= done + 1 %> of <%= @session.tasks.size %> · <%= task.cluster %> · <%= task.component.name %>, <%= pluralize(quantity(task.servings), "serving") %></p>
+      <p class="step__instructions"><%= task.instructions %></p>
+
+      <% lines, parts = task.ingredient_lines, task.parts %>
+      <% if lines.any? || parts.any? %>
+        <ul class="step__ingredients">
+          <% parts.each do |part, amount| %>
+            <li><%= quantity(amount) %> <%= part.unit %> <%= part.child.name %></li>
+          <% end %>
+          <% lines.each do |line, amount| %>
+            <li><%= quantity(amount) %> <%= line.unit %> <%= line.ingredient ? line.ingredient.name : "any #{line.ingredient_family.name}" %><%= ", #{line.note}" if line.note %></li>
+          <% end %>
+        </ul>
+      <% end %>
+
+      <div class="run">
+        <% if task.timed? %>
+          <%= button_to "Start #{task.duration_minutes} min", start_cooking_task_path(task), class: "button button--primary" %>
+          <%= button_to "Done", complete_cooking_task_path(task), class: "button" %>
+        <% else %>
+          <%= button_to "Done", complete_cooking_task_path(task), class: "button button--primary" %>
+        <% end %>
+      </div>
+    </section>
+  <% elsif running.any? %>
+    <p class="empty">Waiting on what is running.</p>
+  <% else %>
+    <section class="step">
+      <p class="step__instructions">Every step is done.</p>
+      <%= button_to @session.prep? ? "Finish and stock the batches" : "Finish and mark served", finish_cooking_session_path(@session), class: "button button--primary" %>
+      <p class="hint"><%= @session.prep? ? "Adds each batch to stock as a prepped lot, and draws the raw ingredients it used." : "Draws what the meal used from stock." %></p>
+    </section>
+  <% end %>
+
+  <details class="explain">
+    <summary>All steps</summary>
+    <ol class="explain__body">
+      <% @session.tasks.each do |task| %>
+        <li class="<%= "step--done" if task.completed? %>">
+          <%= task.cluster %>: <%= task.instructions %>
+          <% if task.completed? %><%= button_to "Undo", reopen_cooking_task_path(task), class: "link-quiet", form_class: "inline" %><% end %>
+        </li>
+      <% end %>
+    </ol>
+  </details>
+<% when "done" %>
+  <p>Finished <%= l(@session.finished_at, format: :short) %>.</p>
+  <% if @session.stock_notes.present? %>
+    <h2>not drawn from stock</h2>
+    <ul>
+      <% @session.stock_notes.split("\n").each do |note| %>
+        <li><%= note %></li>
+      <% end %>
+    </ul>
+  <% end %>
+  <p><%= link_to "Stock", stock_items_path %> · <%= link_to "Schedule", schedule_entries_path %></p>
+<% end %>
