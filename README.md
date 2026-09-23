@@ -63,8 +63,8 @@ with the reason on its page.
 tired**, a plan form, and the meals from a week back to four weeks ahead.
 
 **Plan** fills the chosen meals (breakfast, lunch, dinner) over the chosen
-days, one slot at a time in date order. Dishes that violate anyone's
-restriction are never candidates. The rest are scored, and the highest wins;
+days, one slot at a time in date order, for everyone who eats by default.
+Dishes that any of them is restricted from are never candidates. The rest are scored, and the highest wins;
 ties go to the dish name.
 
 | Signal | Scores | Weight |
@@ -73,7 +73,7 @@ ties go to the dish name.
 | Expiry | Each on-hand lot it uses that expires within 4 days, sooner counting more. A lot counts for one dish per plan | 2 |
 | Share | The share of its ingredients also in dishes planned within 3 days | 1 |
 | Repeat | The same dish within 7 days, closer counting more | −4 |
-| Likes | +1 for each member who likes something in it, −1 for each who dislikes something in it | 1 |
+| Likes | +1 for each diner who likes something in it, −1 for each who dislikes something in it | 1 |
 
 | Origin | Put there by | When the plan is derived again |
 | --- | --- | --- |
@@ -83,17 +83,28 @@ ties go to the dish name.
 
 **Skip** marks the meal skipped and derives every planned meal after it again,
 from the stock and dates as they are now. **I'm tired** marks the meal swapped
-and puts the frozen meal that expires soonest, and that nobody is restricted
-from, in its place.
+and puts in its place, for the same people, the frozen meal that expires
+soonest that none of them is restricted from. A lot counted in servings must
+have enough for them.
 
-A meal added by hand for a dish someone is restricted from is refused, naming
-them, until **Schedule it anyway** is ticked. One meal per slot.
+Each meal lists who is eating it and the servings that makes: the sum of
+their portions. A new meal starts with everyone who eats by default; tick
+anyone else in on the meals they come to. A dish anyone at the meal is
+restricted from is refused, naming them. There is no override: a restriction
+is something they do not eat. One meal per slot.
 
 ## household
 
-`/household` lists who eats. Each member's page adds, edits and removes their
-food needs: an ingredient, a family or a component, as a restriction (never
-planned) or a preference that they like or dislike (scored).
+`/household` lists who eats.
+
+| Field | |
+| --- | --- |
+| Portion | Adult servings they eat, since recipes are stored for one adult: 1 is an adult, 0.5 a small child |
+| Eats with us by default | Seated at every new meal. Someone who comes a couple of times a week is left unticked and added to those meals |
+
+Each member's page adds, edits and removes their food needs: an ingredient, a
+family or a component, as a restriction (never planned when they are eating)
+or a preference that they like or dislike (scored).
 
 ## decompose
 

@@ -43,9 +43,10 @@ management, and a scheduler that ties them together.
 | `Decomposition` | `Component`, `status`, and the recipe's ingredients and steps as they were before the rewrite |
 | `Receipt` | A photo or pasted text, `store`, `purchased_on`, `status` (`pending`/`processing`/`parsed`/`failed`/`confirmed`) |
 | `ReceiptLine` | `Receipt`, `description` as printed, `ingredient_name`, `quantity`, `unit`, `expires_on`, `included`, the `StockItem` it became |
-| `HouseholdMember` | `name` |
+| `HouseholdMember` | `name`, `portion` (adult servings), `eats_by_default` |
+| `MealDiner` | `ScheduleEntry` → `HouseholdMember`: who is eating that meal |
 | `FoodNeed` | `HouseholdMember`, polymorphic `subject` (`Ingredient`, `IngredientFamily`, `Component`), `tier`: `restriction` or `preference`, `sentiment`: `likes` or `dislikes` |
-| `ScheduleEntry` | `served_on`, `meal_slot` (`breakfast`/`lunch`/`dinner`), dish, `status` (`planned`/`served`/`skipped`/`swapped`), `origin` (`manual`/`derived`/`easy`), `restrictions_overridden`. One active meal per slot |
+| `ScheduleEntry` | `served_on`, `meal_slot` (`breakfast`/`lunch`/`dinner`), dish, `status` (`planned`/`served`/`skipped`/`swapped`), `origin` (`manual`/`derived`/`easy`), its diners. One active meal per slot |
 | `ShoppingListItem` | Derived, not stored: `ScheduleEntry` requirements minus on-hand `StockItem`s, rounded to purchase units. Exported to iOS Reminders |
 
 ### stock kinds
@@ -58,8 +59,9 @@ management, and a scheduler that ties them together.
 
 ### restrictions
 
-The household eats together, so every member's restrictions apply to every
-`ScheduleEntry`.
+The restrictions of everyone eating a `ScheduleEntry` apply to it. A new
+entry seats everyone who eats by default; others are added per meal. There is
+no override: a restriction is something they do not eat.
 
 | Restricted subject | Violated by |
 | --- | --- |
@@ -128,9 +130,10 @@ necessarily a dependency).
   replaces the planner's planned entries and keeps the rest; a planner entry
   edited by hand becomes a hand entry. A skip re-derives the planner's
   entries after it.
-- **Manual:** create `ScheduleEntry` rows by hand. One that violates a
-  restriction fails validation and names the member. It saves only with
-  `restrictions_overridden` set.
+- **Manual:** create `ScheduleEntry` rows by hand. One whose dish anyone
+  eating it is restricted from fails validation and names them.
+- The planner plans for those who eat by default. Each meal's servings are
+  the sum of its diners' portions.
 - The schedule re-derives after disruption. No rigid fixed week.
 
 ## freezer bank

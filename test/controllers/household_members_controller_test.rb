@@ -17,9 +17,10 @@ class HouseholdMembersControllerTest < ActionDispatch::IntegrationTest
     get new_household_member_path
     assert_response :success
 
-    post household_members_path, params: { household_member: { name: "Bobby" } }
+    post household_members_path, params: { household_member: { name: "Bobby", portion: "1.25", eats_by_default: "0" } }
     bobby = HouseholdMember.find_by!(name: "Bobby")
     assert_redirected_to edit_household_member_path(bobby)
+    assert_equal [ 1.25, false ], [ bobby.portion, bobby.eats_by_default ]
 
     patch household_member_path(bobby), params: { household_member: { name: "Robert" } }
     assert_equal "Robert", bobby.reload.name

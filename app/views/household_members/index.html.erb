@@ -1,4 +1,4 @@
-<%= page_head "household", lede: "Everyone eats together, so everyone's restrictions apply to every meal." do %>
+<%= page_head "household", lede: "Everyone at a meal must be able to eat it. Portions scale recipes, which are stored for one adult." do %>
   <%= link_to "Add someone", new_household_member_path, class: "button button--primary" %>
 <% end %>
 
@@ -7,6 +7,8 @@
     <thead>
       <tr>
         <th scope="col">Name</th>
+        <th scope="col" class="numeric">Portion</th>
+        <th scope="col">By default</th>
         <th scope="col">Can't eat</th>
         <th scope="col">Likes</th>
         <th scope="col">Dislikes</th>
@@ -18,6 +20,8 @@
         <% needs = member.food_needs %>
         <tr>
           <td><%= member.name %></td>
+          <td class="numeric"><%= quantity(member.portion) %></td>
+          <td><%= member.eats_by_default? ? "yes" : "no" %></td>
           <td><%= needs.select(&:restriction?).map { |need| need.subject.name }.sort.join(", ") %></td>
           <td><%= needs.select { |need| need.preference? && need.likes? }.map { |need| need.subject.name }.sort.join(", ") %></td>
           <td><%= needs.select { |need| need.preference? && need.dislikes? }.map { |need| need.subject.name }.sort.join(", ") %></td>

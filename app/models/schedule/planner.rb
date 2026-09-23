@@ -1,6 +1,6 @@
-# Fills meal slots with dishes, greedily, one slot at a time in date order.
-# Dishes that violate anyone's restriction are never candidates. The rest are
-# scored:
+# Fills meal slots with dishes, greedily, one slot at a time in date order,
+# for the people who eat by default. Dishes that violate any of their
+# restrictions are never candidates. The rest are scored:
 #
 #   stock    how much of the dish is on hand, 0-1                    x 3
 #   expiry   on-hand stock it uses that expires within 4 days,
@@ -33,7 +33,7 @@ class Schedule::Planner
     new.replace(entries.map { |entry| [ entry.served_on, entry.meal_slot ] })
   end
 
-  def initialize(members: HouseholdMember.includes(food_needs: :subject).to_a)
+  def initialize(members: HouseholdMember.by_default.includes(food_needs: :subject).to_a)
     @members = members
     @likes = members.flat_map { |member| member.food_needs.select(&:preference?) }
   end
@@ -64,7 +64,7 @@ class Schedule::Planner
       end
 
       claimed.merge(expiring.select { |lot| contents.draws_on?(lot) })
-      ScheduleEntry.create!(served_on: date, meal_slot: slot, dish:, origin: :derived)
+      ScheduleEntry.create!(served_on: date, meal_slot: slot, dish:, origin: :derived, diners: @members)
     end
   end
 

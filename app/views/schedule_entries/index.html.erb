@@ -4,7 +4,7 @@
 
 <% if @up_next %>
   <section class="card up-next">
-    <p class="hint">Up next · <%= l(@up_next.served_on, format: :long) %>, <%= @up_next.meal_slot %></p>
+    <p class="hint">Up next · <%= l(@up_next.served_on, format: :long) %>, <%= @up_next.meal_slot %><% if @up_next.diners.any? %> · <%= @up_next.diners.map(&:name).sort.to_sentence %>, <%= pluralize(quantity(@up_next.servings), "serving") %><% end %></p>
     <p class="up-next__dish"><%= link_to @up_next.dish.name, @up_next.dish %></p>
     <div class="run">
       <%= button_to "Served", serve_schedule_entry_path(@up_next), class: "button button--primary" %>
@@ -23,7 +23,7 @@
   <% end %>
   <%= form.submit "Plan" %>
 <% end %>
-<p class="hint">Fills those meals from the dishes everyone can eat, favouring what is in stock and about to expire, and replaces what the planner put there before. Meals added or changed by hand are kept.</p>
+<p class="hint">Fills those meals, for everyone who eats by default, from the dishes they can all eat, favouring what is in stock and about to expire, and replaces what the planner put there before. Meals added or changed by hand are kept.</p>
 
 <h2>meals</h2>
 <% if @entries.any? %>
@@ -33,6 +33,8 @@
         <th scope="col">Day</th>
         <th scope="col">Meal</th>
         <th scope="col">Dish</th>
+        <th scope="col">Eating</th>
+        <th scope="col" class="numeric">Servings</th>
         <th scope="col">Status</th>
         <th scope="col">By</th>
         <th scope="col"><span class="visually-hidden">Actions</span></th>
@@ -44,7 +46,9 @@
           <td><%= l(entry.served_on, format: "%a %b %-d") %></td>
           <td><%= entry.meal_slot %></td>
           <td><%= link_to entry.dish.name, entry.dish %></td>
-          <td><%= entry.status %><%= " · override" if entry.restrictions_overridden? %></td>
+          <td><%= entry.diners.map(&:name).sort.join(", ") %></td>
+          <td class="numeric"><%= quantity(entry.servings) %></td>
+          <td><%= entry.status %></td>
           <td><%= { "manual" => "hand", "derived" => "planner", "easy" => "freezer" }.fetch(entry.origin) %></td>
           <td class="run">
             <%= link_to "Edit", edit_schedule_entry_path(entry), class: "link-quiet" %>

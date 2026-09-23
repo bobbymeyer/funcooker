@@ -1,5 +1,7 @@
 <%= its_swiss_form_with model: household_member, url: household_member.new_record? ? household_members_path : household_member_path(household_member), class: "form measure" do |form| %>
   <%= render "its_swiss/shared/errors", record: household_member %>
   <%= form.text_field :name %>
+  <%= form.number_field :portion, step: "any", min: 0, hint: "Adult servings they eat. Recipes are stored for one adult: 1 is an adult, 0.5 a small child." %>
+  <%= form.check_box :eats_by_default, label: "Eats with us by default", hint: "Everyone ticked is at every new meal. Add anyone else to the meals they come to." %>
   <%= form.submit household_member.new_record? ? "Add" : "Save" %>
 <% end %>

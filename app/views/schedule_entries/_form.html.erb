@@ -6,8 +6,17 @@
   <% if schedule_entry.persisted? %>
     <%= form.select :status, ScheduleEntry.statuses.keys, {}, hint: "Skipping plans the days after it again." %>
   <% end %>
-  <% if schedule_entry.restrictions_overridden? || schedule_entry.errors[:dish].any? { |message| message.include?("restriction") } %>
-    <%= form.check_box :restrictions_overridden, label: "Schedule it anyway, despite the restriction" %>
-  <% end %>
+  <fieldset class="field">
+    <legend>Eating</legend>
+    <%= hidden_field_tag "schedule_entry[diner_ids][]", "" %>
+    <% chosen = schedule_entry.new_record? && !schedule_entry.diners.loaded? ? HouseholdMember.by_default.ids : schedule_entry.diner_ids %>
+    <% HouseholdMember.order(:name).each do |member| %>
+      <span class="choice">
+        <%= check_box_tag "schedule_entry[diner_ids][]", member.id, chosen.include?(member.id), id: "schedule_entry_diner_#{member.id}" %>
+        <%= label_tag "schedule_entry_diner_#{member.id}", "#{member.name}#{" (#{quantity(member.portion)})" if member.portion != 1}" %>
+      </span>
+    <% end %>
+    <p class="hint">Everyone who eats by default is ticked on a new meal. Nobody at the meal may be restricted from its dish.</p>
+  </fieldset>
   <%= form.submit schedule_entry.new_record? ? "Add meal" : "Save meal" %>
 <% end %>

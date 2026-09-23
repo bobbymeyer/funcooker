@@ -34,7 +34,7 @@ class ScheduleEntriesControllerTest < ActionDispatch::IntegrationTest
     member.food_needs.create!(subject: @curry, tier: :restriction)
 
     post plan_schedule_entries_path, params: { plan: { from: Date.current.iso8601, days: "3", meal_slots: [ "dinner" ] } }
-    assert_equal "There is no dish the whole household can eat.", flash[:alert]
+    assert_equal "There is no dish everyone who eats by default can eat.", flash[:alert]
   end
 
   test "add, edit and delete a meal by hand" do
@@ -62,17 +62,35 @@ class ScheduleEntriesControllerTest < ActionDispatch::IntegrationTest
     assert entry.reload.manual?
   end
 
-  test "a restricted dish asks for the override, and saves with it" do
-    HouseholdMember.create!(name: "kid").food_needs.create!(subject: @chili, tier: :restriction)
-    params = { served_on: Date.current.iso8601, meal_slot: "dinner", dish_id: @chili.id }
+  test "a dish someone at the meal does not eat is refused" do
+    kid = HouseholdMember.create!(name: "kid")
+    kid.food_needs.create!(subject: @chili, tier: :restriction)
 
-    post schedule_entries_path, params: { schedule_entry: params }
+    post schedule_entries_path, params: { schedule_entry: { served_on: Date.current.iso8601, meal_slot: "dinner", dish_id: @chili.id, diner_ids: [ "", kid.id ] } }
+
     assert_response :unprocessable_entity
-    assert_select "li", /violates a restriction for kid/
-    assert_select "input[type=checkbox][name='schedule_entry[restrictions_overridden]']"
+    assert_select "li", "Dish is something kid doesn't eat"
+  end
 
-    post schedule_entries_path, params: { schedule_entry: params.merge(restrictions_overridden: "1") }
-    assert ScheduleEntry.last.restrictions_overridden?
+  test "who is eating is chosen per meal, defaults ticked" do
+    bobby = HouseholdMember.create!(name: "Bobby")
+    nan = HouseholdMember.create!(name: "Nan", eats_by_default: false, portion: 0.75)
+
+    get new_schedule_entry_path
+    assert_select "input[type=checkbox][value='#{bobby.id}'][checked]"
+    assert_select "input[type=checkbox][value='#{nan.id}']:not([checked])"
+    assert_select "label", "Nan (0.75)"
+
+    post schedule_entries_path, params: { schedule_entry: { served_on: Date.current.iso8601, meal_slot: "dinner", dish_id: @chili.id, diner_ids: [ "", bobby.id, nan.id ] } }
+    entry = ScheduleEntry.last
+    assert_equal [ bobby, nan ], entry.diners.order(:name)
+
+    get schedule_entries_path
+    assert_select "td", "Bobby, Nan"
+    assert_select "td.numeric", "1.75"
+
+    patch schedule_entry_path(entry), params: { schedule_entry: { diner_ids: [ "", bobby.id ] } }
+    assert_equal [ bobby ], entry.reload.diners
   end
 
   test "serve, skip and ease" do
@@ -86,7 +104,7 @@ class ScheduleEntriesControllerTest < ActionDispatch::IntegrationTest
 
     entry = ScheduleEntry.create!(served_on: Date.current + 2, dish: @chili)
     post ease_schedule_entry_path(entry)
-    assert_equal "Nothing in the freezer bank.", flash[:alert]
+    assert_equal "Nothing in the freezer bank for this meal.", flash[:alert]
 
     StockItem.create!(stockable: @curry, kind: :frozen_meal, quantity: 2)
     post ease_schedule_entry_path(entry)

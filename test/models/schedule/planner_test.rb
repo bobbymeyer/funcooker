@@ -77,6 +77,16 @@ class Schedule::PlannerTest < ActiveSupport::TestCase
     assert third
   end
 
+  test "plans for those who eat by default, ignoring the others' restrictions" do
+    nan = HouseholdMember.create!(name: "Nan", eats_by_default: false)
+    nan.food_needs.create!(subject: @chili, tier: :restriction)
+
+    entry = derive(days: 1).first
+
+    assert_equal @chili, entry.dish
+    assert_equal [ @member ], entry.diners
+  end
+
   test "ties go to the dish name" do
     assert_equal "chili", derive(days: 1).first.dish.name
   end

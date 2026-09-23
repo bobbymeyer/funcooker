@@ -3,7 +3,7 @@ class ScheduleEntriesController < ApplicationController
 
   def index
     @up_next = ScheduleEntry.up_next
-    @entries = ScheduleEntry.includes(:dish).where(served_on: (Date.current - 7)..(Date.current + 28)).chronological
+    @entries = ScheduleEntry.includes(:dish, :diners).where(served_on: (Date.current - 7)..(Date.current + 28)).chronological
     @plan = { from: Date.current, days: 7, meal_slots: %w[ dinner ] }
   end
 
@@ -27,7 +27,7 @@ class ScheduleEntriesController < ApplicationController
   # A derived entry changed by hand is the household's decision now, so the
   # next re-derive keeps it.
   def update
-    if @schedule_entry.update(schedule_entry_params.merge(origin: @schedule_entry.easy? ? :easy : :manual))
+    if @schedule_entry.revise(schedule_entry_params.merge(origin: @schedule_entry.easy? ? :easy : :manual))
       redirect_to schedule_entries_path
     else
       render :edit, status: :unprocessable_entity
@@ -46,8 +46,8 @@ class ScheduleEntriesController < ApplicationController
 
     if meal_slots.empty?
       redirect_to schedule_entries_path, alert: "Pick at least one meal to plan."
-    elsif Component.schedulable_for(HouseholdMember.includes(:food_needs)).empty?
-      redirect_to schedule_entries_path, alert: "There is no dish the whole household can eat."
+    elsif Component.schedulable_for(HouseholdMember.by_default.includes(:food_needs)).empty?
+      redirect_to schedule_entries_path, alert: "There is no dish everyone who eats by default can eat."
     else
       planned = Schedule::Planner.derive(from:, days:, meal_slots:)
       redirect_to schedule_entries_path, notice: "Planned #{helpers.pluralize(planned.size, "meal")}."
@@ -77,6 +77,6 @@ class ScheduleEntriesController < ApplicationController
     end
 
     def schedule_entry_params
-      params.expect(schedule_entry: %i[ served_on meal_slot dish_id status restrictions_overridden ])
+      params.expect(schedule_entry: [ :served_on, :meal_slot, :dish_id, :status, diner_ids: [] ])
     end
 end

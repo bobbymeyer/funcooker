@@ -43,6 +43,6 @@ class HouseholdMembersController < ApplicationController
     end
 
     def household_member_params
-      params.expect(household_member: %i[ name ])
+      params.expect(household_member: %i[ name portion eats_by_default ])
     end
 end
