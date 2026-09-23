@@ -3,6 +3,7 @@ class ScheduleEntriesController < ApplicationController
 
   def index
     @up_next = ScheduleEntry.up_next
+    @easy_meals = StockItem.easy_meals.count
     @entries = ScheduleEntry.includes(:dish, :diners).where(served_on: (Date.current - 7)..(Date.current + 28)).chronological
     @plan = { from: Date.current, days: 7, meal_slots: %w[ dinner ] }
   end
@@ -54,8 +55,14 @@ class ScheduleEntriesController < ApplicationController
     end
   end
 
+  # A meal whose dish is in stock whole, like a frozen meal, is drawn from
+  # stock as it is served; any other is marked served as it stands.
   def serve
-    @schedule_entry.served!
+    if Cooking::Meal.new(@schedule_entry).cook_now.empty?
+      CookingSession.plate!(@schedule_entry).finish!
+    else
+      @schedule_entry.served!
+    end
     redirect_to schedule_entries_path
   end
 
@@ -70,11 +77,14 @@ class ScheduleEntriesController < ApplicationController
     redirect_to session
   end
 
+  # From the freezer bank, a particular lot; from the schedule, the one that
+  # expires soonest.
   def ease
-    @schedule_entry.ease!
-    redirect_to schedule_entries_path, notice: "Swapped for something from the freezer."
+    lot = StockItem.find(params[:stock_item_id]) if params[:stock_item_id].present?
+    eased = @schedule_entry.ease!(lot)
+    redirect_to schedule_entries_path, notice: "Swapped for #{eased.dish.name} from the freezer."
   rescue ScheduleEntry::NothingFrozen => e
-    redirect_to schedule_entries_path, alert: "#{e.message}."
+    redirect_back_or_to schedule_entries_path, alert: "#{e.message}."
   end
 
   private

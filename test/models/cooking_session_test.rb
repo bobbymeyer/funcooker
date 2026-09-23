@@ -167,4 +167,57 @@ class CookingSessionTest < ActiveSupport::TestCase
 
     assert_match "ground beef: 0.4 lb short", session.stock_notes
   end
+
+  test "cook once, freeze half: a prep batch can set servings aside for the freezer" do
+    @salsa.update!(freezer_life_days: 90)
+    session = CookingSession.prep!([ { component: @salsa, servings: 4, frozen_servings: 2 } ])
+    session.sequence_in_recipe_order!
+    session.tasks.each(&:complete!)
+
+    session.reload.finish!
+
+    batch = session.prep_batches.sole
+    assert_equal [ 2, "prepped", Date.current + 5 ], [ batch.stock_item.quantity, batch.stock_item.kind, batch.stock_item.expires_on ]
+    assert_equal [ 2, "freezer", Date.current + 90 ], [ batch.frozen_stock_item.quantity, batch.frozen_stock_item.kind, batch.frozen_stock_item.expires_on ]
+  end
+
+  test "a batch frozen whole makes no fridge lot" do
+    session = CookingSession.prep!([ { component: @salsa, servings: 3, frozen_servings: 3 } ])
+    session.sequence_in_recipe_order!
+    session.tasks.each(&:complete!)
+    session.reload.finish!
+
+    assert_nil session.prep_batches.sole.stock_item
+    assert_equal 3, StockItem.freezer.find_by!(stockable: @salsa).quantity
+  end
+
+  test "a batch cannot freeze what does not freeze well, or more than it makes" do
+    @salsa.update!(freezer_life_days: 0)
+    assert_raises(ActiveRecord::RecordInvalid) { CookingSession.prep!([ { component: @salsa, servings: 3, frozen_servings: 1 } ]) }
+
+    assert_raises(ActiveRecord::RecordInvalid) { CookingSession.prep!([ { component: @beef_filling, servings: 3, frozen_servings: 4 } ]) }
+    assert_equal 0, CookingSession.count
+  end
+
+  test "frozen components count as prepped" do
+    StockItem.create!(stockable: @salsa, kind: :freezer, quantity: 5, unit: "serving")
+
+    assert_not Cooking::PrepPlan.new.suggestions.to_h.key?(@salsa)
+    assert_equal [ "Brown the beef.", "Let it rest.", "Fill the tortillas." ], CookingSession.plate!(@entry).tasks.map(&:instructions)
+  end
+
+  test "a meal whose dish is frozen whole is only reheated, and draws the dish" do
+    tacos = StockItem.create!(stockable: @tacos, kind: :freezer, quantity: 4, unit: "serving")
+    salsa = StockItem.create!(stockable: @salsa, kind: :prepped, quantity: 4, unit: "serving")
+
+    assert_empty Cooking::PrepPlan.new.suggestions, "nothing to prep for a meal already in the freezer"
+
+    session = CookingSession.plate!(@entry)
+    assert_empty session.tasks
+    session.finish!
+
+    assert @entry.reload.served?
+    assert_equal 2.5, tacos.reload.quantity
+    assert_equal 4, salsa.reload.quantity, "what is inside the frozen dish is not drawn again"
+  end
 end

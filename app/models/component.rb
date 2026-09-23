@@ -16,6 +16,8 @@ class Component < ApplicationRecord
 
   validates :name, presence: true
   validates :shelf_life_days, numericality: { only_integer: true, greater_than: 0 }, allow_nil: true
+  # 0 means it does not freeze well; blank, not known yet.
+  validates :freezer_life_days, numericality: { only_integer: true, greater_than_or_equal_to: 0 }, allow_nil: true
   validates :source_url, format: { with: %r{\Ahttps?://\S+\z} }, allow_blank: true
 
   scope :dishes, -> { where.not(id: ComponentPart.select(:child_id)) }
@@ -25,6 +27,7 @@ class Component < ApplicationRecord
 
   # A shelf life set by hand is not the model's any more, so its note goes.
   before_update -> { self.shelf_life_note = nil }, if: -> { shelf_life_days_changed? && !shelf_life_note_changed? }
+  before_update -> { self.freezer_life_note = nil }, if: -> { freezer_life_days_changed? && !freezer_life_note_changed? }
 
   def estimate_shelf_life_later(overwrite: false)
     ShelfLifeJob.perform_later(self, overwrite:)
@@ -45,6 +48,11 @@ class Component < ApplicationRecord
   # and no borderline judgement waiting on a decision.
   def decomposable?
     !child_parts.exists? && component_ingredients.exists? && !decompositions.awaiting.exists?
+  end
+
+  # Anything not known to freeze badly may go in the freezer.
+  def freezable?
+    freezer_life_days != 0
   end
 
   def dish?

@@ -4,5 +4,6 @@
   <%= form.text_area :description, rows: 3 %>
   <%= form.url_field :source_url, label: "Source URL" %>
   <%= form.number_field :shelf_life_days, label: "Keeps for (days)", hint: "Once prepped. Sets the expiry of prepped stock." %>
+  <%= form.number_field :freezer_life_days, label: "Keeps frozen (days)", min: 0, hint: "Sets the expiry of freezer stock. 0 if it does not freeze well." %>
   <%= form.submit %>
 <% end %>

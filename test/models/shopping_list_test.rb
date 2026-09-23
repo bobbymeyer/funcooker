@@ -67,6 +67,14 @@ class ShoppingListTest < ActiveSupport::TestCase
     assert_equal [ @friday ], beef.meals
   end
 
+  test "a frozen dish covers its meal whole; frozen components count as prepped" do
+    StockItem.create!(stockable: @tacos, kind: :freezer, quantity: 1.5, unit: "serving")
+    StockItem.create!(stockable: @filling, kind: :freezer, quantity: 1.5, unit: "serving")
+
+    assert_empty list.items.map(&:name) & [ "ground beef" ], "Tuesday is frozen tacos; Friday's filling is frozen"
+    assert_equal [ @friday ], list.items.find { |item| item.name == "corn tortilla" }.meals
+  end
+
   test "stock in another unit is noted, not converted" do
     StockItem.create!(stockable: @beef, kind: :raw, quantity: 2, unit: "kg")
 

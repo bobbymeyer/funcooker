@@ -37,6 +37,19 @@ class CookingSessionsControllerTest < ActionDispatch::IntegrationTest
     assert_select "p", /Ordering the steps/
   end
 
+  test "starting a prep session with servings for the freezer" do
+    get new_cooking_session_path
+    assert_select "input[name='batches[0][frozen_servings]']"
+
+    post cooking_sessions_path, params: { batches: { "0" => { component_id: @salsa.id, include: "1", servings: "6", frozen_servings: "3" } } }
+    assert_equal [ [ 6, 3 ] ], CookingSession.last.prep_batches.map { |batch| [ batch.servings, batch.frozen_servings ] }
+
+    @salsa.update!(freezer_life_days: 0)
+    post cooking_sessions_path, params: { batches: { "0" => { component_id: @salsa.id, include: "1", servings: "6", frozen_servings: "3" } } }
+    assert_redirected_to new_cooking_session_path
+    assert_match "does not freeze well", flash[:alert]
+  end
+
   test "starting with nothing picked" do
     post cooking_sessions_path, params: { batches: { "0" => { component_id: @salsa.id, include: "0", servings: "4" } } }
     assert_redirected_to new_cooking_session_path

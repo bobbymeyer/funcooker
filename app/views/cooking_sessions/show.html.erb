@@ -15,7 +15,7 @@
   </div>
 <% end %>
 
-<%= page_head @session.title, lede: @session.prep? ? @session.prep_batches.map { |batch| "#{batch.component.name} ×#{quantity(batch.servings)}" }.join(", ") : "#{pluralize(quantity(@session.schedule_entry.servings), "serving")}, #{@session.schedule_entry.diners.map(&:name).sort.to_sentence}" %>
+<%= page_head @session.title, lede: @session.prep? ? @session.prep_batches.map { |batch| "#{batch.component.name} ×#{quantity(batch.servings)}#{" (#{quantity(batch.frozen_servings)} to freeze)" if batch.frozen_servings.positive?}" }.join(", ") : "#{pluralize(quantity(@session.schedule_entry.servings), "serving")}, #{@session.schedule_entry.diners.map(&:name).sort.to_sentence}" %>
 
 <% case @session.status %>
 <% when "sequencing" %>
@@ -55,23 +55,29 @@
     <p class="empty">Waiting on what is running.</p>
   <% else %>
     <section class="step">
-      <p class="step__instructions">Every step is done.</p>
+      <% if @session.tasks.empty? %>
+        <p class="step__instructions">Nothing to cook: <%= @session.schedule_entry.dish.name %> is in stock. Thaw it or reheat it from frozen, and serve.</p>
+      <% else %>
+        <p class="step__instructions">Every step is done.</p>
+      <% end %>
       <%= button_to @session.prep? ? "Finish and stock the batches" : "Finish and mark served", finish_cooking_session_path(@session), class: "button button--primary" %>
-      <p class="hint"><%= @session.prep? ? "Adds each batch to stock as a prepped lot, and draws the raw ingredients it used." : "Draws what the meal used from stock." %></p>
+      <p class="hint"><%= @session.prep? ? "Adds each batch to stock as a prepped lot, what is set aside for the freezer as a frozen one, and draws the raw ingredients it used." : "Draws what the meal used from stock." %></p>
     </section>
   <% end %>
 
-  <details class="explain">
-    <summary>All steps</summary>
-    <ol class="explain__body">
-      <% @session.tasks.each do |task| %>
-        <li class="<%= "step--done" if task.completed? %>">
-          <%= task.cluster %>: <%= task.instructions %>
-          <% if task.completed? %><%= button_to "Undo", reopen_cooking_task_path(task), class: "link-quiet", form_class: "inline" %><% end %>
-        </li>
-      <% end %>
-    </ol>
-  </details>
+  <% if @session.tasks.any? %>
+    <details class="explain">
+      <summary>All steps</summary>
+      <ol class="explain__body">
+        <% @session.tasks.each do |task| %>
+          <li class="<%= "step--done" if task.completed? %>">
+            <%= task.cluster %>: <%= task.instructions %>
+            <% if task.completed? %><%= button_to "Undo", reopen_cooking_task_path(task), class: "link-quiet", form_class: "inline" %><% end %>
+          </li>
+        <% end %>
+      </ol>
+    </details>
+  <% end %>
 <% when "done" %>
   <p>Finished <%= l(@session.finished_at, format: :short) %>.</p>
   <% if @session.stock_notes.present? %>

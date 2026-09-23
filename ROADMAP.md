@@ -33,16 +33,16 @@ management, and a scheduler that ties them together.
 | --- | --- |
 | `Ingredient` | Canonical raw item — `name`, `category`, `default_unit`, `pack_size` (in the default unit), optional `ingredient_family` |
 | `IngredientFamily` | Flat, unranked set of interchangeable `Ingredient`s (e.g. "alliums": shallot, red onion, yellow onion). An ingredient belongs to at most one family |
-| `Component` | Modular building block / sub-recipe — `name`, `description`, `source_url`, `shelf_life_days` once prepped (estimated by the model, `shelf_life_note` saying how). Has its own `Step`s. Nests inside other `Component`s through `ComponentPart` |
+| `Component` | Modular building block / sub-recipe — `name`, `description`, `source_url`, `shelf_life_days` once prepped and `freezer_life_days` frozen (0: does not freeze well), both estimated by the model with notes saying how. Has its own `Step`s. Nests inside other `Component`s through `ComponentPart` |
 | Dish | A `Component` that is not the child of any other `Component`. Not a table or subclass: `Component.dishes`, `Component#dish?` |
 | `ComponentPart` | Parent `Component` → child `Component`, `quantity`, `unit`, optional consuming `Step`. No cycles |
 | `ComponentIngredient` | `Component` → exactly one of a locked `Ingredient` or a substitutable `IngredientFamily`, `quantity` for 1 adult, `unit`, `note`, optional consuming `Step` |
 | `Step` | Belongs to a `Component`. `position`, `phase` (`prep`/`plate`), `mode` (`active`/`passive`), `duration_minutes`, `instructions` |
 | `StockItem` | One lot. `stockable` (`Ingredient` or `Component`), `kind`, `quantity`, `unit`, `acquired_on`, `expires_on` |
-| `StockTransaction` | `StockItem`, `delta`, `source` (`receipt`, `manual`, `step_consumption`, `step_production`), optional `Step` |
+| `StockTransaction` | `StockItem`, `delta`, `source` (`receipt`, `manual`, `step_consumption`, `step_production`, `freezer` for a freeze or thaw), optional `Step` |
 | `Decomposition` | `Component`, `status` (`pending`/`processing`/`succeeded`/`failed`/`declined`/`awaiting`/`dismissed`), the model's `verdict`, `reason` and `caveats`, a borderline `plan` waiting on a decision, and the recipe's ingredients and steps as they were before the rewrite |
 | `CookingSession` | `kind` (`prep`/`plate`), `status` (`sequencing`/`ready`/`failed`/`done`), the `ScheduleEntry` for a plate session, notes on what stock could not be drawn |
-| `PrepBatch` | `CookingSession`, `Component`, `servings`, the prepped `StockItem` it became |
+| `PrepBatch` | `CookingSession`, `Component`, `servings`, `frozen_servings` set aside for the freezer, the prepped and freezer `StockItem`s it became |
 | `CookingTask` | `CookingSession`, `Step`, `servings`, `position`, `cluster`, `started_at`, `completed_at` |
 | `Receipt` | A photo or pasted text, `store`, `purchased_on`, `status` (`pending`/`processing`/`parsed`/`failed`/`confirmed`) |
 | `ReceiptLine` | `Receipt`, `description` as printed, `ingredient_name`, `quantity`, `unit`, `expires_on`, `included`, the `StockItem` it became |
@@ -57,8 +57,8 @@ management, and a scheduler that ties them together.
 | `kind` | `stockable` |
 | --- | --- |
 | `raw` | `Ingredient` |
-| `prepped` | `Component` |
-| `frozen_meal` | A dish — the freezer bank |
+| `prepped` | `Component`, in the fridge |
+| `freezer` | `Component`, frozen — the freezer bank. A frozen dish is an easy meal |
 
 ### restrictions
 
@@ -141,12 +141,19 @@ necessarily a dependency).
 
 ## freezer bank
 
+- Frozen stock is component stock with a longer expiry horizon: the same
+  components as prepped stock, kept frozen. Frozen components count wherever
+  prepped ones do (planner, prep plan, shopping list, cooking).
 - The "up next" dish shows as a card with an easy button ("I'm tired").
-  Tapping it swaps the plan to a dish from the frozen meal bank instead of
-  entering the scheduled dish's prep/plate flow. No separate energy-check
-  step in the scheduler.
-- Populated by batch-cooking: cook once, freeze half.
-- Stored as `StockItem`s with `kind: frozen_meal`.
+  Tapping it swaps the plan to a frozen dish instead of entering the
+  scheduled dish's prep/plate flow. No separate energy-check step in the
+  scheduler. A meal from the freezer is reheated: nothing is cooked, and the
+  dish is drawn from stock.
+- Populated by batch-cooking: cook once, freeze half. A prep batch sets
+  servings aside for the freezer; prepped stock about to turn can be frozen.
+  Frozen stock thaws back to the fridge.
+- Stored as `StockItem`s with `kind: freezer`, expiring on the component's
+  `freezer_life_days`.
 
 ## ingredient families
 

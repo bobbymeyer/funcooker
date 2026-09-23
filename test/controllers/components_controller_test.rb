@@ -73,7 +73,7 @@ class ComponentsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "estimate one shelf life, or every missing one" do
-    Component.create!(name: "rice", shelf_life_days: 4)
+    Component.create!(name: "rice", shelf_life_days: 4, freezer_life_days: 90)
 
     assert_enqueued_jobs 1, only: ShelfLifeJob do
       post estimate_shelf_life_component_path(@component)

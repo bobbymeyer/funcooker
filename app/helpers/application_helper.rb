@@ -9,6 +9,12 @@ module ApplicationHelper
     number_with_precision(value, strip_insignificant_zeros: true, precision: 3)
   end
 
+  # A lot's quantity with its unit, in the plural where it is not one: "4
+  # servings", "1 lb".
+  def amount_of(lot)
+    [ quantity(lot.quantity), (lot.unit.pluralize(lot.quantity == 1 ? 1 : 2) if lot.unit.present?) ].compact.join(" ")
+  end
+
   # How long a lot has left, in words: "expired 2 days ago", "today",
   # "tomorrow", "3 days (Sep 26)".
   def keeps_until(date)

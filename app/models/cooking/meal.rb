@@ -1,6 +1,7 @@
 # How a scheduled meal gets cooked: the components inside its dish that are
-# already prepped in stock are drawn from stock; the rest are cooked now,
-# innermost first, and the dish last.
+# already prepped or frozen in stock are drawn from stock; the rest are
+# cooked now, innermost first, and the dish last. A dish in stock whole, like
+# a frozen meal, is only reheated: nothing is cooked.
 class Cooking::Meal
   SERVING_UNITS = [ nil, "", "serving" ].freeze
 
@@ -19,16 +20,20 @@ class Cooking::Meal
     unit.to_s.strip.downcase.singularize.in?(SERVING_UNITS)
   end
 
-  def self.prepped_servings(component)
-    StockItem.on_hand.prepped.where(stockable: component).select { |lot| serving_unit?(lot.unit) }.sum(&:quantity)
+  # Servings of a component ready in stock, prepped or frozen.
+  def self.stocked_servings(component)
+    StockItem.on_hand.stocked.where(stockable: component).select { |lot| serving_unit?(lot.unit) }.sum(&:quantity)
   end
 
   def initialize(entry)
     @entry = entry
   end
 
-  # [[component, servings]] to cook now, innermost first, ending with the dish.
+  # [[component, servings]] to cook now, innermost first, ending with the
+  # dish; none when the dish itself is in stock.
   def cook_now
+    return [] if covered?(@entry.dish, @entry.servings)
+
     plan(@entry.dish, @entry.servings) + [ [ @entry.dish, @entry.servings ] ]
   end
 
@@ -45,6 +50,6 @@ class Cooking::Meal
     end
 
     def covered?(component, servings)
-      self.class.prepped_servings(component) >= servings
+      self.class.stocked_servings(component) >= servings
     end
 end

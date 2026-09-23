@@ -35,7 +35,13 @@ Rails.application.routes.draw do
   resources :receipts, only: %i[ index new create show destroy ] do
     resource :confirmation, only: :create, module: :receipts
   end
-  resources :stock_items, except: :show, path: "stock"
+  resources :stock_items, except: :show, path: "stock" do
+    scope module: :stock_items do
+      resource :freezing, only: :create
+      resource :thawing, only: :create
+    end
+  end
+  resource :freezer, only: :show
   resource :shopping_list, only: :show, path: "shopping" do
     post :remind
   end

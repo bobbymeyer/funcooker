@@ -11,10 +11,56 @@ class StockItemTest < ActiveSupport::TestCase
   test "kind must match what is stocked" do
     assert StockItem.new(stockable: @onion, kind: :raw).valid?
     assert StockItem.new(stockable: @salsa, kind: :prepped).valid?
-    assert StockItem.new(stockable: @dish, kind: :frozen_meal).valid?
+    assert StockItem.new(stockable: @dish, kind: :freezer).valid?
+    assert StockItem.new(stockable: @salsa, kind: :freezer).valid?
 
     assert_not StockItem.new(stockable: @onion, kind: :prepped).valid?
-    assert_not StockItem.new(stockable: @salsa, kind: :frozen_meal).valid?
+    assert_not StockItem.new(stockable: @onion, kind: :freezer).valid?
+  end
+
+  test "freezing moves servings to a lot that keeps as long as the component keeps frozen" do
+    @salsa.update!(shelf_life_days: 4, freezer_life_days: 90)
+    fridge = StockItem.create!(stockable: @salsa, kind: :prepped, quantity: 6, unit: "serving", expires_on: Date.current + 1)
+
+    frozen = fridge.freeze!(4)
+
+    assert_equal 2, fridge.reload.quantity
+    assert frozen.freezer?
+    assert_equal 4, frozen.quantity
+    assert_equal Date.current + 90, frozen.expires_on
+    assert_equal %w[ freezer ], (fridge.stock_transactions.last(1) + frozen.stock_transactions).map(&:source).uniq
+  end
+
+  test "thawing moves servings back to the fridge, keeping as long as the component keeps prepped" do
+    @salsa.update!(shelf_life_days: 4, freezer_life_days: 90)
+    frozen = StockItem.create!(stockable: @salsa, kind: :freezer, quantity: 4, unit: "serving", expires_on: Date.current + 60)
+
+    thawed = frozen.thaw!(1)
+
+    assert_equal 3, frozen.reload.quantity
+    assert thawed.prepped?
+    assert_equal Date.current + 4, thawed.expires_on
+  end
+
+  test "what does not freeze well, or is not there, cannot be moved" do
+    @salsa.update!(freezer_life_days: 0, freezer_life_note: "turns watery")
+    fridge = StockItem.create!(stockable: @salsa, kind: :prepped, quantity: 2, unit: "serving")
+
+    error = assert_raises(StockItem::CannotMove) { fridge.freeze! }
+    assert_match "turns watery", error.message
+
+    @salsa.update!(freezer_life_days: nil)
+    assert_raises(StockItem::CannotMove) { fridge.freeze!(3) }
+    assert_raises(StockItem::CannotMove) { fridge.thaw! }
+    assert_equal 2, fridge.reload.quantity
+  end
+
+  test "only frozen dishes are easy meals" do
+    dish = StockItem.create!(stockable: @dish, kind: :freezer, quantity: 2, unit: "serving")
+    StockItem.create!(stockable: @salsa, kind: :freezer, quantity: 2, unit: "serving")
+    StockItem.create!(stockable: @dish, kind: :prepped, quantity: 2, unit: "serving")
+
+    assert_equal [ dish ], StockItem.easy_meals.to_a
   end
 
   test "recording a transaction moves the quantity" do

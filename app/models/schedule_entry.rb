@@ -48,16 +48,19 @@ class ScheduleEntry < ApplicationRecord
     planned? || served?
   end
 
-  # "I'm tired": the meal is swapped for a finished dish from the freezer
-  # bank, for the same people: the one that expires soonest that none of them
-  # is restricted from, with enough servings for them when counted in
-  # servings.
-  def ease!
+  # "I'm tired": the meal is swapped for a frozen dish from the freezer bank,
+  # for the same people. Given a lot, that one; otherwise the one that
+  # expires soonest. Either way none of them may be restricted from it, and
+  # it needs servings enough for them when counted in servings.
+  def ease!(lot = nil)
     eating = diners.includes(:food_needs).to_a
-    lot = StockItem.on_hand.frozen_meal.includes(:stockable).order(Arel.sql("expires_on IS NULL"), :expires_on).find do |candidate|
-      !candidate.stockable.restricted_for_any?(eating) && (candidate.unit.to_s.singularize != "serving" || candidate.quantity >= eating.sum(&:portion))
+    who = eating.any? ? eating.map(&:name).to_sentence : "this meal"
+    if lot
+      raise NothingFrozen, "#{lot.stockable.name} does not make a meal for #{who}" unless lot.feeds?(eating)
+    else
+      lot = StockItem.easy_meals.first_out.find { |candidate| candidate.feeds?(eating) }
+      raise NothingFrozen, "Nothing in the freezer bank for #{who}" unless lot
     end
-    raise NothingFrozen, "Nothing in the freezer bank for #{eating.any? ? eating.map(&:name).to_sentence : "this meal"}" unless lot
 
     transaction do
       swapped!

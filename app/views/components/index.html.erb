@@ -15,6 +15,7 @@
         <th scope="col">Name</th>
         <th scope="col">Dish</th>
         <th scope="col" class="numeric">Keeps</th>
+        <th scope="col" class="numeric">Frozen</th>
       </tr>
     </thead>
     <tbody>
@@ -23,6 +24,7 @@
           <td><%= link_to component.name, component %></td>
           <td><%= "yes" if component.dish? %></td>
           <td class="numeric"><%= "#{component.shelf_life_days} d" if component.shelf_life_days %></td>
+          <td class="numeric"><%= { nil => nil, 0 => "no" }.fetch(component.freezer_life_days) { "#{component.freezer_life_days} d" } %></td>
         </tr>
       <% end %>
     </tbody>

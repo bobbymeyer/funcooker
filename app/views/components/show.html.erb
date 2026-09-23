@@ -14,8 +14,15 @@
   <% else %>
     No shelf life yet.
   <% end %>
+  <% case @component.freezer_life_days %>
+  <% when nil %>
+  <% when 0 %>
+    Does not freeze well<%= ": #{@component.freezer_life_note}" if @component.freezer_life_note %>.
+  <% else %>
+    Keeps <%= pluralize(@component.freezer_life_days, "day") %> frozen<%= " (estimated: #{@component.freezer_life_note})" if @component.freezer_life_note %>.
+  <% end %>
 </p>
-<%= button_to @component.shelf_life_days ? "Estimate again" : "Estimate shelf life", estimate_shelf_life_component_path(@component), class: "link-quiet" %>
+<%= button_to @component.shelf_life_days || @component.freezer_life_days ? "Estimate again" : "Estimate shelf life", estimate_shelf_life_component_path(@component), class: "link-quiet" %>
 
 <% if (judged = @component.decompositions.where(status: %i[ declined awaiting ]).order(:id).last) && @component.child_parts.none? %>
   <section class="judgement">
