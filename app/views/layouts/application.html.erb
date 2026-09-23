@@ -27,6 +27,7 @@
   <%= nav_link_to "schedule", schedule_entries_path, current: controller_name == "schedule_entries" %>
   <%= nav_link_to "cook", cooking_sessions_path, current: controller_path.start_with?("cooking") %>
   <%= nav_link_to "household", household_members_path, current: controller_path.start_with?("household_members") %>
+  <%= nav_link_to "shopping", shopping_list_path, current: controller_name == "shopping_lists" %>
   <%= nav_link_to "stock", stock_items_path, current: controller_name == "stock_items" %>
   <%= nav_link_to "receipts", receipts_path, current: controller_path.start_with?("receipts") %>
 <% end %>

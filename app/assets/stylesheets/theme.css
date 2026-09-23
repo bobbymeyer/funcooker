@@ -89,3 +89,4 @@ form.inline { display: inline; }
 .stock--expired { color: var(--accent); }
 .judgement { margin-block: var(--line); padding-inline-start: var(--space-2); border-inline-start: var(--rule-heavy) solid var(--rule-strong); }
 .judgement__caveats { list-style: disc; padding-inline-start: var(--space-3); }
+.numbered { list-style: decimal; padding-inline-start: var(--space-4); }

@@ -3,6 +3,7 @@
   <%= form.text_field :name %>
   <%= form.text_field :category %>
   <%= form.text_field :default_unit %>
+  <%= form.number_field :pack_size, step: "any", min: 0, label: "Sold in packs of", hint: "In the default unit. The shopping list rounds up to whole packs." %>
   <%= form.collection_select :ingredient_family_id, IngredientFamily.order(:name), :id, :name, { include_blank: "—" },
         label: "Family", hint: "Ingredients in a family can stand in for each other." %>
   <%= form.submit %>
