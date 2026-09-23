@@ -68,6 +68,11 @@ included line, recorded as a `receipt` transaction, and creates any new
 ingredients. An included line needs an ingredient and a quantity above 0. A
 receipt is stocked once.
 
+A photo the model cannot read fails the receipt with the model's name, the
+server's error, and what is needed: a vision-capable model loaded in
+llama-swap with its `--mmproj` file, and `LLM_VISION_MODEL` set to its id. A
+photo that yields no items says the same. Pasted text needs neither.
+
 ## stock
 
 `/stock` lists every lot on hand, soonest to expire first.

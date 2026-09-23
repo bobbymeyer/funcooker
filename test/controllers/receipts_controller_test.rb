@@ -31,6 +31,17 @@ class ReceiptsControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
+  test "a failed photo receipt shows why and offers pasting instead" do
+    receipt = Receipt.new(status: :failed, error: "test-model could not read the image. Images need a vision-capable model.")
+    receipt.photo.attach(io: file_fixture("receipt.png").open, filename: "receipt.png", content_type: "image/png")
+    receipt.save!
+
+    get receipt_path(receipt)
+
+    assert_select "p.errors", /could not read the image/
+    assert_select "p", /paste the receipt's text instead/
+  end
+
   test "confirming stocks the lines" do
     receipt = parsed_receipt
     line = receipt.lines.first

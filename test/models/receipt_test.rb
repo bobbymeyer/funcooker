@@ -62,6 +62,41 @@ class ReceiptTest < ActiveSupport::TestCase
     Rails.configuration.x.llm.vision_model = nil
   end
 
+  test "a model that cannot take images says what is needed" do
+    stub_request(:post, LlmStubs::LLM_URL).to_return(status: 500,
+      body: { error: { code: 500, message: "image input is not supported - hint: if this is unexpected, you may need to provide the mmproj", type: "server_error" } }.to_json)
+
+    receipt = photo_receipt
+    receipt.parse
+
+    assert receipt.failed?
+    assert_match "test-model could not read the image", receipt.error
+    assert_match "load one in llama-swap with its --mmproj file, and set LLM_VISION_MODEL", receipt.error
+    assert_match "image input is not supported", receipt.error
+  end
+
+  test "an unreachable server is not blamed on vision" do
+    stub_request(:post, LlmStubs::LLM_URL).to_raise(SocketError.new("getaddrinfo: Name or service not known"))
+
+    receipt = photo_receipt
+    receipt.parse
+
+    assert receipt.failed?
+    assert_match "Could not reach", receipt.error
+    assert_no_match(/LLM_VISION_MODEL/, receipt.error)
+  end
+
+  test "a photo that yields nothing points at the vision model" do
+    stub_llm store: nil, purchased_on: nil, lines: []
+
+    receipt = photo_receipt
+    receipt.parse
+
+    assert receipt.failed?
+    assert_match "No items found in the photo", receipt.error
+    assert_match "LLM_VISION_MODEL", receipt.error
+  end
+
   test "an unreadable date falls back to the day the receipt was added" do
     stub_llm READING.merge(purchased_on: "last Tuesday")
 
@@ -140,4 +175,12 @@ class ReceiptTest < ActiveSupport::TestCase
   test "creating a receipt enqueues its parse" do
     assert_enqueued_with(job: ReceiptParseJob) { Receipt.create!(source_text: "receipt") }
   end
+
+  private
+    def photo_receipt
+      Receipt.new.tap do |receipt|
+        receipt.photo.attach(io: file_fixture("receipt.png").open, filename: "receipt.png", content_type: "image/png")
+        receipt.save!
+      end
+    end
 end

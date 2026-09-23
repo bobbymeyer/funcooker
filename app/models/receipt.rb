@@ -24,7 +24,11 @@ class Receipt < ApplicationRecord
   def parse
     processing!
     reading = Extraction.read(text: source_text, image: photo_image, known: Ingredient.order(:name).pluck(:name))
-    raise Error, "No items found on the receipt" if reading[:lines].empty?
+    if reading[:lines].empty?
+      raise Error, photo.attached? ?
+        "No items found in the photo. If the receipt is legible, the model may not be seeing the image: #{Llm::VISION_HINT}" :
+        "No items found on the receipt"
+    end
 
     transaction do
       update!(store: reading[:store], purchased_on: reading[:purchased_on] || created_at.to_date)
@@ -38,6 +42,7 @@ class Receipt < ApplicationRecord
       parsed!
     end
   rescue Error, Llm::Error => e
+    Rails.logger.error("Receipt #{id} failed: #{e.message}")
     update!(status: :failed, error: e.message)
   rescue => e
     update!(status: :failed, error: "Parsing failed (#{e.class})")

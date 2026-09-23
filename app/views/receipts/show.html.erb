@@ -7,7 +7,7 @@
   <p class="empty">Reading the receipt. This page updates when it is done.</p>
 <% when "failed" %>
   <p class="errors"><%= @receipt.error %></p>
-  <p><%= link_to "Try again", new_receipt_path %></p>
+  <p><%= link_to "Try again", new_receipt_path %><%= ", or paste the receipt's text instead" if @receipt.photo.attached? %>.</p>
 <% when "parsed" %>
   <%= render "receipts/confirmation", receipt: @receipt %>
 <% when "confirmed" %>

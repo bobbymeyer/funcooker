@@ -6,6 +6,9 @@ require "net/http"
 # vision model.
 class Llm
   class Error < StandardError; end
+  class Refused < Error; end # the server answered, with an error
+
+  VISION_HINT = "Images need a vision-capable model: load one in llama-swap with its --mmproj file, and set LLM_VISION_MODEL to its id."
 
   READ_TIMEOUT = 600 # the first request after idle waits for the model to load
 
@@ -24,7 +27,7 @@ class Llm
     model = image ? @vision_model : @model
     raise Error, "LLM_MODEL is not set" if model.blank?
 
-    reply = post("chat/completions", {
+    reply = complete(model:, image:, body: {
       model: model,
       temperature: 0,
       messages: [
@@ -44,6 +47,16 @@ class Llm
   end
 
   private
+    # A server that cannot take images refuses the request outright, so that
+    # refusal says what is missing.
+    def complete(model:, image:, body:)
+      post("chat/completions", body)
+    rescue Refused => e
+      raise unless image
+
+      raise Refused, "#{model} could not read the image. #{VISION_HINT} The server said: #{e.message}"
+    end
+
     def image_part(image)
       { type: "image_url", image_url: { url: "data:#{image[:content_type]};base64,#{Base64.strict_encode64(image[:data])}" } }
     end
@@ -56,7 +69,7 @@ class Llm
       response = Net::HTTP.start(uri.host, uri.port, use_ssl: uri.scheme == "https", open_timeout: 10, read_timeout: READ_TIMEOUT) do |http|
         http.request(request)
       end
-      raise Error, "#{uri} answered #{response.code}: #{response.body.to_s.truncate(200)}" unless response.is_a?(Net::HTTPSuccess)
+      raise Refused, "#{uri} answered #{response.code}: #{response.body.to_s.truncate(300)}" unless response.is_a?(Net::HTTPSuccess)
 
       JSON.parse(response.body)
     rescue SocketError, SystemCallError, Net::OpenTimeout, Net::ReadTimeout, OpenSSL::SSL::SSLError => e
