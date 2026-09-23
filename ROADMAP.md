@@ -76,9 +76,10 @@ The household eats together, so every member's restrictions apply to every
 3. Ingredient lines come back parsed as `{amount, unit, ingredient, note}`.
    From JSON-LD, only the ingredient lines go to the model.
 4. A dish too simple for a recipe site or cookbook (pasta with jarred sauce,
-   eggs and toast) can be named instead. The model writes the simplest
-   possible version of it, for ingredient and component tracking. Nothing
-   clever or fancy.
+   eggs and toast) can be named instead, and the model writes it for
+   ingredient and component tracking. A sophistication scale sets how far it
+   goes: divorced dad (the default — the simplest possible version, nothing
+   clever or fancy), home cook, Michelin chef.
 5. Recipes are always stored for 1 adult. The model reports how many adult
    servings the source makes; the import divides. Later steps scale up to
    whoever is eating.

@@ -6,8 +6,8 @@
 # them. The import divides by it; the model never does the arithmetic.
 #
 # JSON-LD is read directly, and only its ingredient lines go to the model to be
-# parsed. Anything else goes to the model whole. A simple dish has no source:
-# the model writes the plainest version of it.
+# parsed. Anything else goes to the model whole. A named dish has no source:
+# the model writes it, at the sophistication asked for.
 module RecipeImport::Extraction
   INGREDIENT = {
     type: "object",
@@ -94,16 +94,38 @@ module RecipeImport::Extraction
     }
   end
 
-  def simplest(dish)
-    reply = Llm.extract(schema: RECIPE, input: dish, instructions: <<~TEXT)
-      The user names a dish too simple for a cookbook, like pasta with jarred sauce or eggs and toast. Write the simplest possible recipe for it, for one adult. It is for keeping track of ingredients in a home kitchen, not for impressing anyone.
+  # How far a generated recipe goes, from the least a dish can be to a chef's
+  # version of it. Every level writes for one adult.
+  SOPHISTICATION = {
+    "divorced_dad" => <<~TEXT,
+      Write the simplest possible recipe for it. It is for keeping track of ingredients in a home kitchen, not for impressing anyone.
       - Use only what the dish cannot be made without, plus anything the user names. No garnishes, no optional extras, no seasoning the user did not ask for beyond salt where cooking needs it.
-      - Anything the user says is store-bought is a single ingredient, used as it comes: "jarred marinara sauce", never a sauce made from scratch.
+      - Use store-bought versions wherever a store sells one.
       - As few steps as possible, each one short and plain. No tips, no variations.
+      Do not get clever or fancy.
+    TEXT
+    "home_cook" => <<~TEXT,
+      Write the recipe the way a competent home cook would make it on a weeknight.
+      - Everyday supermarket ingredients. Make the parts that are quick to make from scratch; buy the rest.
+      - Basic seasoning and an aromatic or two where they make a real difference, and no more.
+      - Plain steps a home kitchen can follow, with no special equipment.
+    TEXT
+    "michelin_chef" => <<~TEXT
+      Write the recipe the way a Michelin-starred chef would make it.
+      - Make every part from scratch, with the best ingredients for it.
+      - Precise amounts, refined technique, and a finished, plated dish.
+      - Every step a chef would take, in order, each one specific.
+    TEXT
+  }.freeze
+
+  def generate(dish, sophistication:)
+    reply = Llm.extract(schema: RECIPE, input: dish, instructions: <<~TEXT)
+      The user names a dish. #{SOPHISTICATION.fetch(sophistication)}
+      Anything the user says is store-bought stays store-bought: a single ingredient, used as it comes.
+      Write it for one adult.
       - name: the plain name of the dish.
       - description: null.
       - servings: 1.
-      Do not get clever or fancy.
 
       #{INGREDIENT_FIELDS}
     TEXT

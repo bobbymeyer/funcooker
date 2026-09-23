@@ -87,8 +87,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_23_160335) do
   create_table "recipe_imports", force: :cascade do |t|
     t.integer "component_id"
     t.datetime "created_at", null: false
+    t.string "dish_name"
     t.text "error"
-    t.string "simple_dish"
+    t.integer "sophistication", default: 0, null: false
     t.text "source_text"
     t.string "source_url"
     t.integer "status", default: 0, null: false

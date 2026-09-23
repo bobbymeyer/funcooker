@@ -67,7 +67,7 @@ class RecipeImportTest < ActiveSupport::TestCase
     assert_equal [ "bread" ], import.component.component_ingredients.map { |line| line.ingredient.name }
   end
 
-  test "a simple dish is written by the model, for one adult" do
+  test "a named dish is written by the model, for one adult, as simply as possible by default" do
     stub_llm name: "Pasta with red sauce", description: "should be dropped", servings: 4,
       ingredients: [
         { amount: 100, unit: "g", ingredient: "dried pasta", note: nil },
@@ -75,7 +75,7 @@ class RecipeImportTest < ActiveSupport::TestCase
       ],
       steps: [ "Boil the pasta.", "Heat the sauce and pour it over." ]
 
-    import = RecipeImport.create!(simple_dish: "pasta and red sauce, store-bought noodles and sauce")
+    import = RecipeImport.create!(dish_name: "pasta and red sauce, store-bought noodles and sauce")
     import.process
 
     assert import.succeeded?
@@ -88,7 +88,25 @@ class RecipeImportTest < ActiveSupport::TestCase
     assert_requested :post, LlmStubs::LLM_URL do |request|
       system, user = JSON.parse(request.body)["messages"].map { |message| message["content"] }
       user == "pasta and red sauce, store-bought noodles and sauce" &&
-        system.include?("simplest possible recipe") && system.include?("for one adult")
+        system.include?("simplest possible recipe") && system.include?("for one adult") &&
+        system.include?("store-bought stays store-bought")
+    end
+  end
+
+  test "a named dish can be written by a home cook or a Michelin chef" do
+    { home_cook: "competent home cook", michelin_chef: "Michelin-starred chef" }.each do |level, phrase|
+      stub_llm name: "Eggs and toast", description: nil, servings: 1,
+        ingredients: [ { amount: 2, unit: nil, ingredient: "egg", note: nil } ], steps: [ "Cook the eggs." ]
+
+      import = RecipeImport.create!(dish_name: "eggs and toast", sophistication: level)
+      import.process
+
+      assert import.succeeded?
+      assert_requested :post, LlmStubs::LLM_URL do |request|
+        system = JSON.parse(request.body)["messages"].first["content"]
+        system.include?(phrase) && !system.include?("simplest possible recipe")
+      end
+      WebMock::RequestRegistry.instance.reset!
     end
   end
 
@@ -184,8 +202,10 @@ class RecipeImportTest < ActiveSupport::TestCase
   test "needs exactly one source" do
     assert_not RecipeImport.new.valid?
     assert_not RecipeImport.new(source_url: "https://a.test", source_text: "toast").valid?
-    assert_not RecipeImport.new(source_text: "toast", simple_dish: "toast").valid?
-    assert RecipeImport.new(simple_dish: "eggs and toast").valid?
+    assert_not RecipeImport.new(source_text: "toast", dish_name: "toast").valid?
+    assert RecipeImport.new(dish_name: "eggs and toast").valid?
+    assert RecipeImport.new(dish_name: "eggs and toast").divorced_dad?
+    assert_not RecipeImport.new(dish_name: "eggs and toast", sophistication: "line cook").valid?
     assert_not RecipeImport.new(source_url: "ftp://a.test/recipe").valid?
     assert RecipeImport.new(source_url: " https://a.test/recipe ").valid?
   end

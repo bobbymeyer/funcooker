@@ -15,7 +15,7 @@ LLM_MODEL=<model id> bin/dev
 
 ## recipe import
 
-`/recipe_imports/new` takes a URL, pasted text, or the name of a simple dish. The import runs as a
+`/recipe_imports/new` takes a URL, pasted text, or the name of a dish. The import runs as a
 background job and its page refreshes onto the new component when it is done.
 
 | Source | Read by |
@@ -23,7 +23,13 @@ background job and its page refreshes onto the new component when it is done.
 | Page with `schema.org/Recipe` JSON-LD | Name, description and steps read directly; ingredient lines parsed by the model |
 | Page without it | The model, given the page's text with scripts, nav, header, footer, aside and forms removed, cut at 30,000 characters |
 | Pasted text | The model |
-| Simple dish, e.g. "pasta and red sauce, store-bought noodles and sauce" | The model writes the simplest version for one adult: only what the dish needs, store-bought items as single ingredients, no description |
+| Named dish, e.g. "pasta and red sauce, store-bought noodles and sauce" | The model writes it for one adult, at the level chosen under **Written by**. Anything named as store-bought stays a single ingredient. No description |
+
+| Written by | Writes |
+| --- | --- |
+| divorced dad (default) | The simplest possible version: only what the dish cannot be made without, store-bought wherever a store sells it, fewest steps |
+| home cook | A weeknight version: everyday ingredients, quick parts from scratch, basic seasoning |
+| Michelin chef | Everything from scratch, refined technique, plated |
 
 Each import makes one `Component`: its steps in order, and its ingredient
 lines as `{amount, unit, ingredient, note}`.
