@@ -10,6 +10,7 @@ class ScheduleEntry < ApplicationRecord
   belongs_to :dish, class_name: "Component", inverse_of: :schedule_entries
   has_many :meal_diners, dependent: :destroy
   has_many :diners, through: :meal_diners, source: :household_member
+  has_many :cooking_sessions, dependent: :nullify
 
   enum :meal_slot, { breakfast: 0, lunch: 1, dinner: 2 }, validate: true
   enum :status, { planned: 0, served: 1, skipped: 2, swapped: 3 }, validate: true

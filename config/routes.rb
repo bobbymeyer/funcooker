@@ -35,6 +35,20 @@ Rails.application.routes.draw do
       post :serve
       post :skip
       post :ease
+      post :cook
+    end
+  end
+  resources :cooking_sessions, only: %i[ index new create show destroy ], path: "cook" do
+    member do
+      post :recipe_order
+      post :finish
+    end
+  end
+  resources :cooking_tasks, only: [], path: "cook/steps" do
+    member do
+      post :start
+      post :complete
+      post :reopen
     end
   end
   resources :household_members, except: :show, path: "household" do

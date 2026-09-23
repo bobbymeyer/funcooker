@@ -3,6 +3,7 @@ class Step < ApplicationRecord
   has_many :component_ingredients, dependent: :nullify
   has_many :component_parts, dependent: :nullify
   has_many :stock_transactions, dependent: :nullify
+  has_many :cooking_tasks, dependent: :destroy
 
   enum :phase, { prep: 0, plate: 1 }, validate: true
   enum :mode, { active: 0, passive: 1 }, validate: true

@@ -12,8 +12,10 @@ class Component < ApplicationRecord
   has_many :schedule_entries, foreign_key: :dish_id, dependent: :restrict_with_error, inverse_of: :dish
   has_many :decompositions, dependent: :destroy
   has_many :recipe_imports, dependent: :nullify
+  has_many :prep_batches, dependent: :destroy
 
   validates :name, presence: true
+  validates :shelf_life_days, numericality: { only_integer: true, greater_than: 0 }, allow_nil: true
   validates :source_url, format: { with: %r{\Ahttps?://\S+\z} }, allow_blank: true
 
   scope :dishes, -> { where.not(id: ComponentPart.select(:child_id)) }

@@ -6,6 +6,10 @@
   <%= delete_button component_path(@component), confirm: "Delete #{@component.name}, its ingredients and its steps?" %>
 <% end %>
 
+<% if @component.shelf_life_days %>
+  <p class="hint">Keeps <%= pluralize(@component.shelf_life_days, "day") %> once prepped.</p>
+<% end %>
+
 <% if link = @component.source_link %>
   <p><%= link_to link, link, class: "link-quiet" %></p>
 <% end %>

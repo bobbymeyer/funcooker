@@ -1,0 +1,31 @@
+<%= page_head "cook" do %>
+  <%= link_to "Plan a prep session", new_cooking_session_path, class: "button button--primary" %>
+  <% if @up_next %>
+    <%= button_to "Cook #{@up_next.dish.name}", cook_schedule_entry_path(@up_next), class: "button" %>
+  <% end %>
+<% end %>
+
+<% if @sessions.any? %>
+  <table class="table">
+    <thead>
+      <tr>
+        <th scope="col">Started</th>
+        <th scope="col">Session</th>
+        <th scope="col">Status</th>
+        <th scope="col"><span class="visually-hidden">Actions</span></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @sessions.each do |session| %>
+        <tr>
+          <td><%= link_to l(session.created_at, format: :short), session %></td>
+          <td><%= session.prep? ? "prep" : "plate: #{session.schedule_entry&.dish&.name}" %></td>
+          <td><%= session.status %></td>
+          <td><%= delete_button cooking_session_path(session), quiet: true, confirm: "Delete this session? Stock is not changed back." %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% else %>
+  <p class="empty">No sessions yet.</p>
+<% end %>

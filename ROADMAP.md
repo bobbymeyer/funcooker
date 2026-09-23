@@ -33,7 +33,7 @@ management, and a scheduler that ties them together.
 | --- | --- |
 | `Ingredient` | Canonical raw item — `name`, `category`, `default_unit`, optional `ingredient_family` |
 | `IngredientFamily` | Flat, unranked set of interchangeable `Ingredient`s (e.g. "alliums": shallot, red onion, yellow onion). An ingredient belongs to at most one family |
-| `Component` | Modular building block / sub-recipe — `name`, `description`, `source_url`. Has its own `Step`s. Nests inside other `Component`s through `ComponentPart` |
+| `Component` | Modular building block / sub-recipe — `name`, `description`, `source_url`, `shelf_life_days` once prepped. Has its own `Step`s. Nests inside other `Component`s through `ComponentPart` |
 | Dish | A `Component` that is not the child of any other `Component`. Not a table or subclass: `Component.dishes`, `Component#dish?` |
 | `ComponentPart` | Parent `Component` → child `Component`, `quantity`, `unit`, optional consuming `Step`. No cycles |
 | `ComponentIngredient` | `Component` → exactly one of a locked `Ingredient` or a substitutable `IngredientFamily`, `quantity` for 1 adult, `unit`, `note`, optional consuming `Step` |
@@ -41,6 +41,9 @@ management, and a scheduler that ties them together.
 | `StockItem` | One lot. `stockable` (`Ingredient` or `Component`), `kind`, `quantity`, `unit`, `acquired_on`, `expires_on` |
 | `StockTransaction` | `StockItem`, `delta`, `source` (`receipt`, `manual`, `step_consumption`, `step_production`), optional `Step` |
 | `Decomposition` | `Component`, `status`, and the recipe's ingredients and steps as they were before the rewrite |
+| `CookingSession` | `kind` (`prep`/`plate`), `status` (`sequencing`/`ready`/`failed`/`done`), the `ScheduleEntry` for a plate session, notes on what stock could not be drawn |
+| `PrepBatch` | `CookingSession`, `Component`, `servings`, the prepped `StockItem` it became |
+| `CookingTask` | `CookingSession`, `Step`, `servings`, `position`, `cluster`, `started_at`, `completed_at` |
 | `Receipt` | A photo or pasted text, `store`, `purchased_on`, `status` (`pending`/`processing`/`parsed`/`failed`/`confirmed`) |
 | `ReceiptLine` | `Receipt`, `description` as printed, `ingredient_name`, `quantity`, `unit`, `expires_on`, `included`, the `StockItem` it became |
 | `HouseholdMember` | `name`, `portion` (adult servings), `eats_by_default` |

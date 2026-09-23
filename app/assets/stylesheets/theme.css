@@ -76,3 +76,13 @@ button.link-quiet {
 
 .up-next__dish { font-size: var(--size-4); line-height: var(--line-3); font-weight: bold; }
 .schedule__past { color: var(--ink-quiet); }
+
+/* Cooking: one step at a time, large enough to read from the stove. */
+.step__instructions { font-size: var(--size-4); line-height: var(--line-3); }
+.step__ingredients { font-size: var(--size-3); line-height: var(--line-2); }
+.step--done { color: var(--ink-quiet); text-decoration: line-through; }
+.timers { position: sticky; top: 0; z-index: 1; background: var(--paper); border-block-end: var(--rule-hair) solid var(--rule); }
+.timers__item { display: flex; gap: var(--space-2); align-items: baseline; }
+.timers__item strong { font-variant-numeric: tabular-nums; }
+.timer--done { color: var(--accent); }
+form.inline { display: inline; }

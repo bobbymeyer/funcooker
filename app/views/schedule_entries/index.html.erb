@@ -7,7 +7,8 @@
     <p class="hint">Up next · <%= l(@up_next.served_on, format: :long) %>, <%= @up_next.meal_slot %><% if @up_next.diners.any? %> · <%= @up_next.diners.map(&:name).sort.to_sentence %>, <%= pluralize(quantity(@up_next.servings), "serving") %><% end %></p>
     <p class="up-next__dish"><%= link_to @up_next.dish.name, @up_next.dish %></p>
     <div class="run">
-      <%= button_to "Served", serve_schedule_entry_path(@up_next), class: "button button--primary" %>
+      <%= button_to "Cook", cook_schedule_entry_path(@up_next), class: "button button--primary" %>
+      <%= button_to "Served", serve_schedule_entry_path(@up_next), class: "button" %>
       <%= button_to "I'm tired", ease_schedule_entry_path(@up_next), class: "button" %>
       <%= button_to "Skip", skip_schedule_entry_path(@up_next), class: "button button--quiet" %>
     </div>

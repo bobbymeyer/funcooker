@@ -93,6 +93,36 @@ anyone else in on the meals they come to. A dish anyone at the meal is
 restricted from is refused, naming them. There is no override: a restriction
 is something they do not eat. One meal per slot.
 
+## cook
+
+`/cook` lists cooking sessions. Both kinds are walked the same way: one step
+at a time in large type, with that step's ingredients scaled to the servings
+(a step that names none shows the whole component's, on its first step).
+**Done** moves on. A passive step with a time has **Start**: it moves to the
+countdown strip at the top, which stacks, and is marked done from there. Any
+step can be undone.
+
+| Session | Started from | Steps | Finishing it |
+| --- | --- | --- | --- |
+| Prep | **Plan a prep session** | Every step of each batch, ordered by the model | Adds each batch to stock as a prepped lot, in servings, keeping for the component's shelf life; draws the raw ingredients used |
+| Plate | **Cook** on a scheduled meal | The steps of each component in it not already prepped in stock, innermost first, then the dish's own, in recipe order | Draws the prepped components and raw ingredients used; marks the meal served |
+
+The prep planner looks at the meals planned over the next days (7 by
+default) and suggests every component inside their dishes that has steps,
+for the servings those meals need less the prepped servings in stock. Each
+can be unticked or its servings changed, and any other component added.
+
+The model orders a prep session's steps: long passive steps as early as they
+can go, long components first, one active step at a time, grouped by
+technique or station. Each component's steps are then put back in their
+recipe order within the places they got, and any step it dropped is
+appended. If the model cannot be reached, the session says why and can be
+cooked in recipe order instead.
+
+Stock is drawn soonest-expiring first, and only from lots in the unit the
+recipe measures in. What could not be drawn (none in stock, a different
+unit, or too little) is listed on the finished session rather than guessed.
+
 ## household
 
 `/household` lists who eats.

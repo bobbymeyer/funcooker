@@ -47,6 +47,6 @@ class ComponentsController < ApplicationController
     end
 
     def component_params
-      params.expect(component: %i[ name description source_url ])
+      params.expect(component: %i[ name description source_url shelf_life_days ])
     end
 end

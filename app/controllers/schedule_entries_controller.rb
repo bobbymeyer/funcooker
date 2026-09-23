@@ -1,5 +1,5 @@
 class ScheduleEntriesController < ApplicationController
-  before_action :set_schedule_entry, only: %i[ edit update destroy serve skip ease ]
+  before_action :set_schedule_entry, only: %i[ edit update destroy serve skip ease cook ]
 
   def index
     @up_next = ScheduleEntry.up_next
@@ -62,6 +62,12 @@ class ScheduleEntriesController < ApplicationController
   def skip
     @schedule_entry.skipped!
     redirect_to schedule_entries_path, notice: "Skipped. The days after it are planned again."
+  end
+
+  # Cook the meal now, step by step; finishing it marks it served.
+  def cook
+    session = @schedule_entry.cooking_sessions.ready.plate.last || CookingSession.plate!(@schedule_entry)
+    redirect_to session
   end
 
   def ease

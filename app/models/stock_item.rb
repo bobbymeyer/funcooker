@@ -7,6 +7,7 @@ class StockItem < ApplicationRecord
   belongs_to :stockable, polymorphic: true
   has_many :stock_transactions, dependent: :destroy
   has_one :receipt_line, dependent: :nullify
+  has_one :prep_batch, dependent: :nullify
 
   after_save :record_quantity_change, if: :saved_change_to_quantity?
 

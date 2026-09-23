@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_23_192951) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_23_193912) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.bigint "blob_id", null: false
     t.datetime "created_at", null: false
@@ -73,8 +73,35 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_23_192951) do
     t.datetime "created_at", null: false
     t.text "description"
     t.string "name", null: false
+    t.integer "shelf_life_days"
     t.string "source_url"
     t.datetime "updated_at", null: false
+  end
+
+  create_table "cooking_sessions", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.text "error"
+    t.datetime "finished_at"
+    t.integer "kind", null: false
+    t.integer "schedule_entry_id"
+    t.integer "status", default: 0, null: false
+    t.text "stock_notes"
+    t.datetime "updated_at", null: false
+    t.index ["schedule_entry_id"], name: "index_cooking_sessions_on_schedule_entry_id"
+  end
+
+  create_table "cooking_tasks", force: :cascade do |t|
+    t.string "cluster"
+    t.datetime "completed_at"
+    t.integer "cooking_session_id", null: false
+    t.datetime "created_at", null: false
+    t.integer "position", null: false
+    t.decimal "servings", null: false
+    t.datetime "started_at"
+    t.integer "step_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["cooking_session_id"], name: "index_cooking_tasks_on_cooking_session_id"
+    t.index ["step_id"], name: "index_cooking_tasks_on_step_id"
   end
 
   create_table "decompositions", force: :cascade do |t|
@@ -133,6 +160,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_23_192951) do
     t.index ["household_member_id"], name: "index_meal_diners_on_household_member_id"
     t.index ["schedule_entry_id", "household_member_id"], name: "index_meal_diners_on_schedule_entry_id_and_household_member_id", unique: true
     t.index ["schedule_entry_id"], name: "index_meal_diners_on_schedule_entry_id"
+  end
+
+  create_table "prep_batches", force: :cascade do |t|
+    t.integer "component_id", null: false
+    t.integer "cooking_session_id", null: false
+    t.datetime "created_at", null: false
+    t.decimal "servings", null: false
+    t.integer "stock_item_id"
+    t.datetime "updated_at", null: false
+    t.index ["component_id"], name: "index_prep_batches_on_component_id"
+    t.index ["cooking_session_id"], name: "index_prep_batches_on_cooking_session_id"
+    t.index ["stock_item_id"], name: "index_prep_batches_on_stock_item_id"
   end
 
   create_table "receipt_lines", force: :cascade do |t|
@@ -232,11 +271,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_23_192951) do
   add_foreign_key "component_parts", "components", column: "child_id"
   add_foreign_key "component_parts", "components", column: "parent_id"
   add_foreign_key "component_parts", "steps"
+  add_foreign_key "cooking_sessions", "schedule_entries"
+  add_foreign_key "cooking_tasks", "cooking_sessions"
+  add_foreign_key "cooking_tasks", "steps"
   add_foreign_key "decompositions", "components"
   add_foreign_key "food_needs", "household_members"
   add_foreign_key "ingredients", "ingredient_families"
   add_foreign_key "meal_diners", "household_members"
   add_foreign_key "meal_diners", "schedule_entries"
+  add_foreign_key "prep_batches", "components"
+  add_foreign_key "prep_batches", "cooking_sessions"
+  add_foreign_key "prep_batches", "stock_items"
   add_foreign_key "receipt_lines", "receipts"
   add_foreign_key "receipt_lines", "stock_items"
   add_foreign_key "recipe_imports", "components"
