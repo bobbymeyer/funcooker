@@ -1,0 +1,29 @@
+<%= page_head @household_member.name %>
+<%= render "household_members/form", household_member: @household_member %>
+
+<h2>food</h2>
+<% needs = @household_member.food_needs.includes(:subject).select(&:persisted?) %>
+<% if needs.any? %>
+  <table class="table">
+    <tbody>
+      <% needs.sort_by { |need| [ need.tier, need.subject.name ] }.each do |need| %>
+        <tr>
+          <td><%= need.describe %></td>
+          <td><%= need.subject_type.titleize.downcase %></td>
+          <td class="run">
+            <%= link_to "Edit", edit_food_need_path(need), class: "link-quiet" %>
+            <%= delete_button food_need_path(need), quiet: true, confirm: "Remove “#{need.describe}”?" %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% end %>
+
+<h3>add</h3>
+<%= its_swiss_form_with model: @food_need, url: household_member_food_needs_path(@household_member), class: "form measure" do |form| %>
+  <%= render "household_members/food_needs/fields", form: %>
+  <%= form.submit "Add" %>
+<% end %>
+
+<p><%= link_to "Back to the household", household_members_path %></p>

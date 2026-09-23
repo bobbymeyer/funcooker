@@ -1,0 +1,2 @@
+<%= page_head "edit meal", lede: "#{l(@schedule_entry.served_on, format: :long)}, #{@schedule_entry.meal_slot}" %>
+<%= render "form", schedule_entry: @schedule_entry %>

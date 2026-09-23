@@ -44,8 +44,8 @@ management, and a scheduler that ties them together.
 | `Receipt` | A photo or pasted text, `store`, `purchased_on`, `status` (`pending`/`processing`/`parsed`/`failed`/`confirmed`) |
 | `ReceiptLine` | `Receipt`, `description` as printed, `ingredient_name`, `quantity`, `unit`, `expires_on`, `included`, the `StockItem` it became |
 | `HouseholdMember` | `name` |
-| `FoodNeed` | `HouseholdMember`, polymorphic `subject` (`Ingredient`, `IngredientFamily`, `Component`), `tier`: `restriction` or `preference` |
-| `ScheduleEntry` | `served_on`, `meal_slot` (`breakfast`/`lunch`/`dinner`), dish, `status` (`planned`/`served`/`skipped`/`swapped`), `restrictions_overridden` |
+| `FoodNeed` | `HouseholdMember`, polymorphic `subject` (`Ingredient`, `IngredientFamily`, `Component`), `tier`: `restriction` or `preference`, `sentiment`: `likes` or `dislikes` |
+| `ScheduleEntry` | `served_on`, `meal_slot` (`breakfast`/`lunch`/`dinner`), dish, `status` (`planned`/`served`/`skipped`/`swapped`), `origin` (`manual`/`derived`/`easy`), `restrictions_overridden`. One active meal per slot |
 | `ShoppingListItem` | Derived, not stored: `ScheduleEntry` requirements minus on-hand `StockItem`s, rounded to purchase units. Exported to iOS Reminders |
 
 ### stock kinds
@@ -122,8 +122,12 @@ necessarily a dependency).
 - **Procedural:** greedy heuristic, not a full constraint solver. Candidates
   are `Component.schedulable_for(members)`: dishes that violate no member's
   restriction. Scores them by stock/component reuse, expiry pressure, repeat
-  avoidance and `preference` weighting. The scheduler never schedules a
-  restricted dish.
+  avoidance and `preference` weighting (likes and dislikes). The scheduler
+  never schedules a restricted dish.
+- Each entry records its origin: planner, hand, or the easy button. Deriving
+  replaces the planner's planned entries and keeps the rest; a planner entry
+  edited by hand becomes a hand entry. A skip re-derives the planner's
+  entries after it.
 - **Manual:** create `ScheduleEntry` rows by hand. One that violates a
   restriction fails validation and names the member. It saves only with
   `restrictions_overridden` set.

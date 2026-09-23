@@ -1,0 +1,5 @@
+<%= its_swiss_form_with model: household_member, url: household_member.new_record? ? household_members_path : household_member_path(household_member), class: "form measure" do |form| %>
+  <%= render "its_swiss/shared/errors", record: household_member %>
+  <%= form.text_field :name %>
+  <%= form.submit household_member.new_record? ? "Add" : "Save" %>
+<% end %>

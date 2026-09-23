@@ -1,0 +1,13 @@
+<%= its_swiss_form_with model: schedule_entry, url: schedule_entry.new_record? ? schedule_entries_path : schedule_entry_path(schedule_entry), class: "form measure" do |form| %>
+  <%= render "its_swiss/shared/errors", record: schedule_entry %>
+  <%= form.date_field :served_on, label: "Day" %>
+  <%= form.select :meal_slot, ScheduleEntry.meal_slots.keys, {}, label: "Meal" %>
+  <%= form.collection_select :dish_id, Component.dishes.order(:name), :id, :name, { include_blank: schedule_entry.new_record? }, label: "Dish" %>
+  <% if schedule_entry.persisted? %>
+    <%= form.select :status, ScheduleEntry.statuses.keys, {}, hint: "Skipping plans the days after it again." %>
+  <% end %>
+  <% if schedule_entry.restrictions_overridden? || schedule_entry.errors[:dish].any? { |message| message.include?("restriction") } %>
+    <%= form.check_box :restrictions_overridden, label: "Schedule it anyway, despite the restriction" %>
+  <% end %>
+  <%= form.submit schedule_entry.new_record? ? "Add meal" : "Save meal" %>
+<% end %>

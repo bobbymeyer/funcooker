@@ -1,0 +1,59 @@
+<%= page_head "schedule" do %>
+  <%= link_to "Add a meal", new_schedule_entry_path, class: "button" %>
+<% end %>
+
+<% if @up_next %>
+  <section class="card up-next">
+    <p class="hint">Up next · <%= l(@up_next.served_on, format: :long) %>, <%= @up_next.meal_slot %></p>
+    <p class="up-next__dish"><%= link_to @up_next.dish.name, @up_next.dish %></p>
+    <div class="run">
+      <%= button_to "Served", serve_schedule_entry_path(@up_next), class: "button button--primary" %>
+      <%= button_to "I'm tired", ease_schedule_entry_path(@up_next), class: "button" %>
+      <%= button_to "Skip", skip_schedule_entry_path(@up_next), class: "button button--quiet" %>
+    </div>
+  </section>
+<% end %>
+
+<h2>plan</h2>
+<%= its_swiss_form_with scope: :plan, url: plan_schedule_entries_path, class: "form form--dense measure" do |form| %>
+  <%= form.date_field :from, value: @plan[:from] %>
+  <%= form.number_field :days, value: @plan[:days], min: 1, max: 28 %>
+  <% ScheduleEntry.meal_slots.each_key do |slot| %>
+    <%= form.check_box :meal_slots, { multiple: true, checked: slot.in?(@plan[:meal_slots]), label: slot }, slot, nil %>
+  <% end %>
+  <%= form.submit "Plan" %>
+<% end %>
+<p class="hint">Fills those meals from the dishes everyone can eat, favouring what is in stock and about to expire, and replaces what the planner put there before. Meals added or changed by hand are kept.</p>
+
+<h2>meals</h2>
+<% if @entries.any? %>
+  <table class="table">
+    <thead>
+      <tr>
+        <th scope="col">Day</th>
+        <th scope="col">Meal</th>
+        <th scope="col">Dish</th>
+        <th scope="col">Status</th>
+        <th scope="col">By</th>
+        <th scope="col"><span class="visually-hidden">Actions</span></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @entries.each do |entry| %>
+        <tr class="<%= "schedule__past" if entry.served_on < Date.current %>">
+          <td><%= l(entry.served_on, format: "%a %b %-d") %></td>
+          <td><%= entry.meal_slot %></td>
+          <td><%= link_to entry.dish.name, entry.dish %></td>
+          <td><%= entry.status %><%= " · override" if entry.restrictions_overridden? %></td>
+          <td><%= { "manual" => "hand", "derived" => "planner", "easy" => "freezer" }.fetch(entry.origin) %></td>
+          <td class="run">
+            <%= link_to "Edit", edit_schedule_entry_path(entry), class: "link-quiet" %>
+            <%= delete_button schedule_entry_path(entry), quiet: true, confirm: "Delete #{entry.dish.name} on #{entry.served_on}?" %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% else %>
+  <p class="empty">Nothing planned. Plan some meals above.</p>
+<% end %>
