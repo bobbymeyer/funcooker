@@ -154,6 +154,10 @@ necessarily a dependency).
   Frozen stock thaws back to the fridge.
 - Stored as `StockItem`s with `kind: freezer`, expiring on the component's
   `freezer_life_days`.
+- **Thaw reminders.** The frozen servings the next meals will draw on,
+  where the fridge falls short, due the evening before: on the schedule, in
+  the freezer bank, and in iOS Reminders with a due time (sent daily from the
+  Mac, or pulled from `/freezer.json`).
 
 ## ingredient families
 

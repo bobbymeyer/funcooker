@@ -41,7 +41,9 @@ Rails.application.routes.draw do
       resource :thawing, only: :create
     end
   end
-  resource :freezer, only: :show
+  resource :freezer, only: :show do
+    post :remind
+  end
   resource :shopping_list, only: :show, path: "shopping" do
     post :remind
   end

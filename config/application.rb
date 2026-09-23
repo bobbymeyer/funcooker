@@ -22,6 +22,9 @@ module Funcooker
     # in config/environments, which are processed later.
     #
     # config.time_zone = "Central Time (US & Canada)"
+    # What "today" and "this evening" mean: the household's zone, by its
+    # tz database name (America/Los_Angeles).
+    config.time_zone = ENV.fetch("TIME_ZONE", "UTC")
     # config.eager_load_paths << Rails.root.join("extras")
 
     # The OpenAI-compatible endpoint recipe import extracts with. LLM_MODEL is
