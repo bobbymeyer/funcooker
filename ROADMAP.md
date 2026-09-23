@@ -25,7 +25,7 @@ management, and a scheduler that ties them together.
   No separate API/SPA layer.
 - UI on [its-swiss](https://github.com/bobbymeyer/its-swiss).
 - Recipe import and receipt parsing use LLM calls with a fixed, constrained
-  output schema (structured extraction, not open-ended generation).
+  output schema (structured extraction; generation only for simple dishes).
 
 ## data model
 
@@ -75,9 +75,13 @@ The household eats together, so every member's restrictions apply to every
    cookbook page takes it too, through a vision model.
 3. Ingredient lines come back parsed as `{amount, unit, ingredient, note}`.
    From JSON-LD, only the ingredient lines go to the model.
-4. Imported recipes land as a single `Component`. Breaking them into
+4. A dish too simple for a recipe site or cookbook (pasta with jarred sauce,
+   eggs and toast) can be named instead. The model writes the simplest
+   possible version of it, for ingredient and component tracking. Nothing
+   clever or fancy.
+5. Imported recipes land as a single `Component`. Breaking them into
    reusable sub-components is manual.
-5. The model is served by llama-swap on the Studio, over its
+6. The model is served by llama-swap on the Studio, over its
    OpenAI-compatible API. Extraction runs as a background job.
 
 Reference for site coverage/patterns:

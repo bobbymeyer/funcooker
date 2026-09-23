@@ -3,7 +3,8 @@
 #   { name:, description:, steps: [String], ingredients: [{ amount:, unit:, ingredient:, note: }] }
 #
 # JSON-LD is read directly, and only its ingredient lines go to the model to be
-# parsed. Anything else goes to the model whole.
+# parsed. Anything else goes to the model whole. A simple dish has no source:
+# the model writes the plainest version of it.
 module RecipeImport::Extraction
   INGREDIENT = {
     type: "object",
@@ -36,12 +37,16 @@ module RecipeImport::Extraction
     additionalProperties: false
   }.freeze
 
-  INGREDIENT_RULES = <<~TEXT
-    For each ingredient line:
+  INGREDIENT_FIELDS = <<~TEXT
+    For each ingredient:
     - ingredient: the ingredient itself, lowercase and singular, without quantity, preparation or brand. "red onion", not "2 red onions, finely diced".
     - amount: a number. Write fractions as decimals: "1 1/2" is 1.5. For a range, the low end, and put the range in note. null when there is no amount, as in "salt to taste".
     - unit: lowercase and abbreviated: g, kg, ml, l, tsp, tbsp, cup, oz, lb, or the recipe's own word ("clove", "can", "bunch"). null for a plain count, as in "2 eggs".
     - note: preparation and anything else on the line, as written. null when there is nothing else.
+  TEXT
+
+  INGREDIENT_RULES = <<~TEXT
+    #{INGREDIENT_FIELDS}
     Keep every line, in order. Invent nothing.
   TEXT
 
@@ -72,6 +77,27 @@ module RecipeImport::Extraction
     {
       name: reply["name"].to_s.squish,
       description: reply["description"].presence,
+      steps: Array(reply["steps"]).map(&:squish).compact_blank,
+      ingredients: normalize(reply["ingredients"])
+    }
+  end
+
+  def simplest(dish, servings:)
+    reply = Llm.extract(schema: RECIPE, input: dish, instructions: <<~TEXT)
+      The user names a dish too simple for a cookbook, like pasta with jarred sauce or eggs and toast. Write the simplest possible recipe for it, for #{servings} #{"person".pluralize(servings)}. It is for keeping track of ingredients in a home kitchen, not for impressing anyone.
+      - Use only what the dish cannot be made without, plus anything the user names. No garnishes, no optional extras, no seasoning the user did not ask for beyond salt where cooking needs it.
+      - Anything the user says is store-bought is a single ingredient, used as it comes: "jarred marinara sauce", never a sauce made from scratch.
+      - As few steps as possible, each one short and plain. No tips, no variations.
+      - name: the plain name of the dish.
+      - description: null.
+      Do not get clever or fancy.
+
+      #{INGREDIENT_FIELDS}
+    TEXT
+
+    {
+      name: reply["name"].to_s.squish,
+      description: nil,
       steps: Array(reply["steps"]).map(&:squish).compact_blank,
       ingredients: normalize(reply["ingredients"])
     }

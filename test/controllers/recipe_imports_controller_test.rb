@@ -17,6 +17,13 @@ class RecipeImportsControllerTest < ActionDispatch::IntegrationTest
     assert_select "p", /Importing/
   end
 
+  test "create with a simple dish" do
+    post recipe_imports_path, params: { recipe_import: { source_url: "", source_text: "", simple_dish: "eggs and toast" } }
+
+    assert_redirected_to RecipeImport.last
+    assert_equal "eggs and toast", RecipeImport.last.simple_dish
+  end
+
   test "create with no source re-renders the form" do
     post recipe_imports_path, params: { recipe_import: { source_url: "", source_text: "" } }
     assert_response :unprocessable_entity

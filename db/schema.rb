@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_22_194200) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_23_160335) do
   create_table "component_ingredients", force: :cascade do |t|
     t.integer "component_id", null: false
     t.datetime "created_at", null: false
@@ -88,6 +88,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_22_194200) do
     t.integer "component_id"
     t.datetime "created_at", null: false
     t.text "error"
+    t.string "simple_dish"
     t.text "source_text"
     t.string "source_url"
     t.integer "status", default: 0, null: false

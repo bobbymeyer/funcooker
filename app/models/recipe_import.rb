@@ -1,5 +1,6 @@
-# One recipe coming in from a URL or pasted text. It lands as a single
-# Component; breaking it into sub-components is done by hand afterwards.
+# One recipe coming in from a URL, pasted text, or the name of a dish too
+# simple for anyone to publish a recipe for. It lands as a single Component;
+# breaking it into sub-components is done by hand afterwards.
 class RecipeImport < ApplicationRecord
   class Error < StandardError; end
 
@@ -7,7 +8,7 @@ class RecipeImport < ApplicationRecord
 
   enum :status, { pending: 0, processing: 1, succeeded: 2, failed: 3 }, validate: true
 
-  normalizes :source_url, :source_text, with: ->(value) { value.strip.presence }
+  normalizes :source_url, :source_text, :simple_dish, with: ->(value) { value.strip.presence }
 
   validate :one_source
   validates :source_url, format: { with: %r{\Ahttps?://\S+\z}, message: "must be an http or https URL" }, allow_nil: true
@@ -28,14 +29,22 @@ class RecipeImport < ApplicationRecord
 
   private
     def one_source
-      errors.add(:base, "Give a URL or paste a recipe, not both") if source_url && source_text
-      errors.add(:base, "Give a URL or paste a recipe") unless source_url || source_text
+      case sources.count(&:present?)
+      when 0 then errors.add(:base, "Give a URL, paste a recipe, or name a simple dish")
+      when 2.. then errors.add(:base, "Give only one of a URL, a pasted recipe, or a simple dish")
+      end
+    end
+
+    def sources
+      [ source_url, source_text, simple_dish ]
     end
 
     def extract
       recipe = if source_url
         page = Page.fetch(source_url)
         Extraction.from_json_ld(page.json_ld_recipe) || Extraction.from_text(page.text)
+      elsif simple_dish
+        Extraction.simplest(simple_dish, servings: [ HouseholdMember.count, 1 ].max)
       else
         Extraction.from_text(source_text)
       end

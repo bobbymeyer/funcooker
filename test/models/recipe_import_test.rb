@@ -66,6 +66,41 @@ class RecipeImportTest < ActiveSupport::TestCase
     assert_equal [ "bread" ], import.component.component_ingredients.map { |line| line.ingredient.name }
   end
 
+  test "a simple dish is written by the model, for the household" do
+    2.times { |i| HouseholdMember.create!(name: "member #{i}") }
+    stub_llm name: "Pasta with red sauce", description: "should be dropped",
+      ingredients: [
+        { amount: 1, unit: "lb", ingredient: "dried pasta", note: nil },
+        { amount: 1, unit: "jar", ingredient: "marinara sauce", note: nil }
+      ],
+      steps: [ "Boil the pasta.", "Heat the sauce and pour it over." ]
+
+    import = RecipeImport.create!(simple_dish: "pasta and red sauce, store-bought noodles and sauce")
+    import.process
+
+    assert import.succeeded?
+    assert_equal "Pasta with red sauce", import.component.name
+    assert_nil import.component.description
+    assert_nil import.component.source_url
+    assert_equal [ "dried pasta", "marinara sauce" ], import.component.component_ingredients.map { |line| line.ingredient.name }
+
+    assert_requested :post, LlmStubs::LLM_URL do |request|
+      system, user = JSON.parse(request.body)["messages"].map { |message| message["content"] }
+      user == "pasta and red sauce, store-bought noodles and sauce" &&
+        system.include?("simplest possible recipe") && system.include?("for 2 people")
+    end
+  end
+
+  test "a simple dish with nobody in the household is for one person" do
+    stub_llm name: "Toast", description: nil, ingredients: [ { amount: 1, unit: "slice", ingredient: "bread", note: nil } ], steps: [ "Toast it." ]
+
+    RecipeImport.create!(simple_dish: "toast").process
+
+    assert_requested :post, LlmStubs::LLM_URL do |request|
+      JSON.parse(request.body)["messages"].first["content"].include?("for 1 person")
+    end
+  end
+
   test "ingredients are shared across imports by name" do
     existing = Ingredient.create!(name: "bread")
     stub_llm name: "Toast", description: nil,
@@ -131,6 +166,8 @@ class RecipeImportTest < ActiveSupport::TestCase
   test "needs exactly one source" do
     assert_not RecipeImport.new.valid?
     assert_not RecipeImport.new(source_url: "https://a.test", source_text: "toast").valid?
+    assert_not RecipeImport.new(source_text: "toast", simple_dish: "toast").valid?
+    assert RecipeImport.new(simple_dish: "eggs and toast").valid?
     assert_not RecipeImport.new(source_url: "ftp://a.test/recipe").valid?
     assert RecipeImport.new(source_url: " https://a.test/recipe ").valid?
   end

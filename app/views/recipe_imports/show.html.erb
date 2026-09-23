@@ -1,6 +1,6 @@
 <%= turbo_stream_from @recipe_import %>
 
-<%= page_head "import", lede: @recipe_import.source_url || "pasted text" %>
+<%= page_head "import", lede: @recipe_import.source_url || @recipe_import.simple_dish || "pasted text" %>
 
 <% if @recipe_import.failed? %>
   <p class="errors"><%= @recipe_import.error %></p>
