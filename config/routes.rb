@@ -36,6 +36,7 @@ Rails.application.routes.draw do
     resource :confirmation, only: :create, module: :receipts
   end
   resources :stock_items, except: :show, path: "stock"
+  resource :shopping_list, only: :show, path: "shopping"
   resources :schedule_entries, except: :show, path: "schedule" do
     collection { post :plan }
     member do

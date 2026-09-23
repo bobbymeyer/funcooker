@@ -206,6 +206,40 @@ photo that yields no items says the same. Pasted text needs neither.
 
 `/stock` lists every lot on hand, soonest to expire first.
 
+## shopping
+
+`/shopping` lists what to buy for the meals planned over the next days (7 by
+default, up to 28): everything they need, scaled to each meal's servings,
+less what is on hand.
+
+| | |
+| --- | --- |
+| Prepped components | Cover as many servings as are in stock, meal by meal in date order; only the rest needs ingredients |
+| Stock | Subtracted in the unit the recipe measures in, named ingredients before "any of a family". Stock in another unit is noted, not converted |
+| To taste | Listed only when there is none in stock |
+| Rounding | Up to whole packs when the ingredient has a pack size in its default unit; counts up to whole numbers |
+
+Each item's notes say which meals it is for, and what is needed and on hand.
+
+To get it into Reminders:
+
+| Route | |
+| --- | --- |
+| **Copy for Reminders** | Copies one item per line. Pasted into a Reminders list, each line becomes a reminder; a Groceries list sorts them into sections |
+| `/shopping.json` | `{list, from, days, items: [{title, notes}]}`, for a Shortcut; `?days=` sets the window |
+| `/shopping.txt` | One item per line |
+
+The Shortcut, built once in the Shortcuts app:
+
+1. **Get Contents of URL**: `https://<host>/shopping.json`
+2. **Get Dictionary Value** for `items`
+3. **Repeat with Each** item:
+   1. **Get Dictionary Value** for `title` in Repeat Item
+   2. **Find Reminders** where List is Groceries, Title is the value, and Is Not Completed
+   3. **If** Reminders has no value: **Add New Reminder** with the title, in Groceries, with Notes from `notes`
+
+Run again, it only adds what is not already on the list.
+
 ## configuration
 
 | Variable | Default | |

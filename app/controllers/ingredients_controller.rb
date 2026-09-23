@@ -44,6 +44,6 @@ class IngredientsController < ApplicationController
     end
 
     def ingredient_params
-      params.expect(ingredient: %i[ name category default_unit ingredient_family_id ])
+      params.expect(ingredient: %i[ name category default_unit pack_size ingredient_family_id ])
     end
 end
