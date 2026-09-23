@@ -1,6 +1,9 @@
 # Turns a source into the recipe shape an import builds from:
 #
-#   { name:, description:, steps: [String], ingredients: [{ amount:, unit:, ingredient:, note: }] }
+#   { name:, description:, servings:, steps: [String], ingredients: [{ amount:, unit:, ingredient:, note: }] }
+#
+# servings is how many adult portions the amounts make, as the source wrote
+# them. The import divides by it; the model never does the arithmetic.
 #
 # JSON-LD is read directly, and only its ingredient lines go to the model to be
 # parsed. Anything else goes to the model whole. A simple dish has no source:
@@ -20,8 +23,8 @@ module RecipeImport::Extraction
 
   INGREDIENTS = {
     type: "object",
-    properties: { ingredients: { type: "array", items: INGREDIENT } },
-    required: %w[ ingredients ],
+    properties: { servings: { type: "number" }, ingredients: { type: "array", items: INGREDIENT } },
+    required: %w[ servings ingredients ],
     additionalProperties: false
   }.freeze
 
@@ -30,10 +33,11 @@ module RecipeImport::Extraction
     properties: {
       name: { type: "string" },
       description: { type: [ "string", "null" ] },
+      servings: { type: "number" },
       ingredients: { type: "array", items: INGREDIENT },
       steps: { type: "array", items: { type: "string" } }
     },
-    required: %w[ name description ingredients steps ],
+    required: %w[ name description servings ingredients steps ],
     additionalProperties: false
   }.freeze
 
@@ -47,7 +51,11 @@ module RecipeImport::Extraction
 
   INGREDIENT_RULES = <<~TEXT
     #{INGREDIENT_FIELDS}
-    Keep every line, in order. Invent nothing.
+    Keep every line, in order, with its amount as written. Do not scale anything. Invent nothing.
+  TEXT
+
+  SERVINGS_RULE = <<~TEXT
+    - servings: how many adult portions the recipe makes as written. Read it from the yield: "Serves 4" is 4, "4-6 servings" is 4. When the yield is in pieces or a container ("24 cookies", "1 loaf"), estimate the adult portions. When there is no yield, estimate from the amounts. Always a number above 0.
   TEXT
 
   extend self
@@ -55,12 +63,14 @@ module RecipeImport::Extraction
   def from_json_ld(recipe)
     return unless recipe
 
+    lines = Array(recipe["recipeIngredient"] || recipe["ingredients"]).map { |line| plain(line) }.compact_blank
+    yields = Array(recipe["recipeYield"]).map { |value| plain(value) }.compact_blank.join(", ")
+
     {
       name: plain(recipe["name"]),
       description: plain(recipe["description"]).presence,
-      steps: steps(recipe["recipeInstructions"]),
-      ingredients: ingredients(Array(recipe["recipeIngredient"] || recipe["ingredients"]).map { |line| plain(line) }.compact_blank)
-    }
+      steps: steps(recipe["recipeInstructions"])
+    }.merge(ingredients(lines, yields:))
   end
 
   def from_text(text)
@@ -69,7 +79,8 @@ module RecipeImport::Extraction
       - name: the recipe's title.
       - description: its short introduction, if it has one, else null.
       - steps: each instruction step in order, as written, without numbering.
-      If the text holds no recipe, return an empty name, ingredients and steps.
+      #{SERVINGS_RULE}
+      If the text holds no recipe, return an empty name, ingredients and steps, and 1 serving.
 
       #{INGREDIENT_RULES}
     TEXT
@@ -77,19 +88,21 @@ module RecipeImport::Extraction
     {
       name: reply["name"].to_s.squish,
       description: reply["description"].presence,
+      servings: reply["servings"],
       steps: Array(reply["steps"]).map(&:squish).compact_blank,
       ingredients: normalize(reply["ingredients"])
     }
   end
 
-  def simplest(dish, servings:)
+  def simplest(dish)
     reply = Llm.extract(schema: RECIPE, input: dish, instructions: <<~TEXT)
-      The user names a dish too simple for a cookbook, like pasta with jarred sauce or eggs and toast. Write the simplest possible recipe for it, for #{servings} #{"person".pluralize(servings)}. It is for keeping track of ingredients in a home kitchen, not for impressing anyone.
+      The user names a dish too simple for a cookbook, like pasta with jarred sauce or eggs and toast. Write the simplest possible recipe for it, for one adult. It is for keeping track of ingredients in a home kitchen, not for impressing anyone.
       - Use only what the dish cannot be made without, plus anything the user names. No garnishes, no optional extras, no seasoning the user did not ask for beyond salt where cooking needs it.
       - Anything the user says is store-bought is a single ingredient, used as it comes: "jarred marinara sauce", never a sauce made from scratch.
       - As few steps as possible, each one short and plain. No tips, no variations.
       - name: the plain name of the dish.
       - description: null.
+      - servings: 1.
       Do not get clever or fancy.
 
       #{INGREDIENT_FIELDS}
@@ -98,21 +111,23 @@ module RecipeImport::Extraction
     {
       name: reply["name"].to_s.squish,
       description: nil,
+      servings: 1,
       steps: Array(reply["steps"]).map(&:squish).compact_blank,
       ingredients: normalize(reply["ingredients"])
     }
   end
 
   private
-    def ingredients(lines)
-      return [] if lines.empty?
+    def ingredients(lines, yields:)
+      return { servings: 1, ingredients: [] } if lines.empty?
 
-      reply = Llm.extract(schema: INGREDIENTS, input: lines.join("\n"), instructions: <<~TEXT)
-        The user gives you a recipe's ingredient list, one ingredient per line. Parse each line.
-
+      input = "Yield: #{yields.presence || "not given"}\n\n#{lines.join("\n")}"
+      reply = Llm.extract(schema: INGREDIENTS, input:, instructions: <<~TEXT)
+        The user gives you a recipe's yield, then its ingredient list, one ingredient per line. Parse each line.
+        #{SERVINGS_RULE}
         #{INGREDIENT_RULES}
       TEXT
-      normalize(reply["ingredients"])
+      { servings: reply["servings"], ingredients: normalize(reply["ingredients"]) }
     end
 
     def normalize(lines)

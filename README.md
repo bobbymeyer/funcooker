@@ -23,14 +23,20 @@ background job and its page refreshes onto the new component when it is done.
 | Page with `schema.org/Recipe` JSON-LD | Name, description and steps read directly; ingredient lines parsed by the model |
 | Page without it | The model, given the page's text with scripts, nav, header, footer, aside and forms removed, cut at 30,000 characters |
 | Pasted text | The model |
-| Simple dish, e.g. "pasta and red sauce, store-bought noodles and sauce" | The model writes the simplest version, for as many people as the household has members (at least one): only what the dish needs, store-bought items as single ingredients, no description |
+| Simple dish, e.g. "pasta and red sauce, store-bought noodles and sauce" | The model writes the simplest version for one adult: only what the dish needs, store-bought items as single ingredients, no description |
 
 Each import makes one `Component`: its steps in order, and its ingredient
-lines as `{amount, unit, ingredient, note}`. Ingredients are matched to an
+lines as `{amount, unit, ingredient, note}`.
+
+Amounts are stored for one adult. The model reports how many adult servings
+the source makes — from its yield, estimated when the yield is in pieces
+("24 cookies") or missing — and each amount is divided by that, to 4 decimal
+places. Amounts written inside step text are not scaled. Ingredients are matched to an
 existing `Ingredient` by lowercase name, or created.
 
 A page that answers an error, a model that cannot be reached or runs out of
-tokens, and a source with no ingredients and no steps each fail the import,
+tokens, a source with no ingredients and no steps, and a serving count that
+is not above 0 each fail the import,
 with the reason on its page.
 
 ### configuration

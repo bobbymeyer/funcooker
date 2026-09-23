@@ -1,6 +1,9 @@
 # One recipe coming in from a URL, pasted text, or the name of a dish too
 # simple for anyone to publish a recipe for. It lands as a single Component;
 # breaking it into sub-components is done by hand afterwards.
+#
+# Amounts are always stored for one adult. Scaling up to whoever is eating
+# happens later, from these.
 class RecipeImport < ApplicationRecord
   class Error < StandardError; end
 
@@ -44,11 +47,12 @@ class RecipeImport < ApplicationRecord
         page = Page.fetch(source_url)
         Extraction.from_json_ld(page.json_ld_recipe) || Extraction.from_text(page.text)
       elsif simple_dish
-        Extraction.simplest(simple_dish, servings: [ HouseholdMember.count, 1 ].max)
+        Extraction.simplest(simple_dish)
       else
         Extraction.from_text(source_text)
       end
       raise Error, "No recipe found" if recipe[:ingredients].empty? && recipe[:steps].empty?
+      raise Error, "The model gave #{recipe[:servings].inspect} servings" unless recipe[:servings].to_f.positive?
 
       recipe
     end
@@ -63,10 +67,14 @@ class RecipeImport < ApplicationRecord
           recipe[:ingredients].each do |line|
             component.component_ingredients.create!(
               ingredient: Ingredient.find_or_create_by!(name: line[:ingredient].squish.downcase),
-              quantity: line[:amount], unit: line[:unit], note: line[:note]
+              quantity: per_adult(line[:amount], recipe[:servings]), unit: line[:unit], note: line[:note]
             )
           end
         end
       end
+    end
+
+    def per_adult(amount, servings)
+      (amount.to_d / servings.to_d).round(4) if amount
     end
 end

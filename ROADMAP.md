@@ -36,7 +36,7 @@ management, and a scheduler that ties them together.
 | `Component` | Modular building block / sub-recipe — `name`, `description`, `source_url`. Has its own `Step`s. Nests inside other `Component`s through `ComponentPart` |
 | Dish | A `Component` that is not the child of any other `Component`. Not a table or subclass: `Component.dishes`, `Component#dish?` |
 | `ComponentPart` | Parent `Component` → child `Component`, `quantity`, `unit`, optional consuming `Step`. No cycles |
-| `ComponentIngredient` | `Component` → exactly one of a locked `Ingredient` or a substitutable `IngredientFamily`, `quantity`, `unit`, `note`, optional consuming `Step` |
+| `ComponentIngredient` | `Component` → exactly one of a locked `Ingredient` or a substitutable `IngredientFamily`, `quantity` for 1 adult, `unit`, `note`, optional consuming `Step` |
 | `Step` | Belongs to a `Component`. `position`, `phase` (`prep`/`plate`), `mode` (`active`/`passive`), `duration_minutes`, `instructions` |
 | `StockItem` | One lot. `stockable` (`Ingredient` or `Component`), `kind`, `quantity`, `unit`, `acquired_on`, `expires_on` |
 | `StockTransaction` | `StockItem`, `delta`, `source` (`receipt`, `manual`, `step_consumption`, `step_production`), optional `Step` |
@@ -79,9 +79,12 @@ The household eats together, so every member's restrictions apply to every
    eggs and toast) can be named instead. The model writes the simplest
    possible version of it, for ingredient and component tracking. Nothing
    clever or fancy.
-5. Imported recipes land as a single `Component`. Breaking them into
+5. Recipes are always stored for 1 adult. The model reports how many adult
+   servings the source makes; the import divides. Later steps scale up to
+   whoever is eating.
+6. Imported recipes land as a single `Component`. Breaking them into
    reusable sub-components is manual.
-6. The model is served by llama-swap on the Studio, over its
+7. The model is served by llama-swap on the Studio, over its
    OpenAI-compatible API. Extraction runs as a background job.
 
 Reference for site coverage/patterns:
