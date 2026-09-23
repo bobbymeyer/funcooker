@@ -1,0 +1,13 @@
+<%= its_swiss_form_with model: line, url: line.new_record? ? component_ingredient_lines_path(component) : ingredient_line_path(line), class: "form measure" do |form| %>
+  <%= render "its_swiss/shared/errors", record: line %>
+  <%= form.text_field :ingredient_name, label: "Ingredient", list: "ingredient-names", hint: "A new name is added to the ingredients." %>
+  <%= ingredient_datalist %>
+  <%= form.collection_select :ingredient_family_id, IngredientFamily.order(:name), :id, :name, { include_blank: "—" },
+        label: "Or any of a family", hint: "Leave the ingredient blank to let stock pick from the family." %>
+  <%= form.number_field :quantity, step: "any", label: "Amount for 1 adult" %>
+  <%= form.text_field :unit %>
+  <%= form.text_field :note %>
+  <%= form.collection_select :step_id, component.steps, :id, ->(step) { "#{step.position}. #{step.instructions.truncate(60)}" }, { include_blank: "—" },
+        label: "Used in step" %>
+  <%= form.submit line.new_record? ? "Add ingredient" : "Save ingredient" %>
+<% end %>

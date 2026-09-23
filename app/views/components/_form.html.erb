@@ -1,0 +1,7 @@
+<%= its_swiss_form_with model: component, class: "form measure" do |form| %>
+  <%= render "its_swiss/shared/errors", record: component %>
+  <%= form.text_field :name %>
+  <%= form.text_area :description, rows: 3 %>
+  <%= form.url_field :source_url, label: "Source URL" %>
+  <%= form.submit %>
+<% end %>

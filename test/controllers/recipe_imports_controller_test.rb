@@ -53,4 +53,25 @@ class RecipeImportsControllerTest < ActionDispatch::IntegrationTest
     get recipe_import_path(import)
     assert_select "p.errors", "No recipe found"
   end
+
+  test "index and destroy, keeping the recipe" do
+    component = Component.create!(name: "Toast")
+    import = RecipeImport.create!(dish_name: "toast", status: :succeeded, component:)
+
+    get recipe_imports_path
+    assert_select "a", "Toast"
+
+    delete recipe_import_path(import)
+    assert_redirected_to recipe_imports_path
+    assert_not RecipeImport.exists?(import.id)
+    assert Component.exists?(component.id)
+  end
+
+  test "deleting a recipe keeps its import, without it" do
+    component = Component.create!(name: "Toast")
+    import = RecipeImport.create!(dish_name: "toast", status: :succeeded, component:)
+
+    component.destroy!
+    assert_nil import.reload.component
+  end
 end

@@ -1,0 +1,5 @@
+<%= its_swiss_form_with model: ingredient_family, class: "form measure" do |form| %>
+  <%= render "its_swiss/shared/errors", record: ingredient_family %>
+  <%= form.text_field :name, hint: "Add ingredients to it from each ingredient's page." %>
+  <%= form.submit %>
+<% end %>

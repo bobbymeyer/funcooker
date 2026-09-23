@@ -8,6 +8,16 @@ class ComponentIngredient < ApplicationRecord
 
   validate :exactly_one_of_ingredient_or_family
 
+  # For the form: the ingredient by name, added to the library if it is new.
+  def ingredient_name
+    ingredient&.name
+  end
+
+  def ingredient_name=(name)
+    name = name.to_s.squish.downcase
+    self.ingredient = name.presence && Ingredient.find_or_initialize_by(name:)
+  end
+
   def substitutable?
     ingredient_family.present?
   end

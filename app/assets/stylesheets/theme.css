@@ -62,3 +62,14 @@
 
 .steps .steps__position { width: 3ch; }
 .steps .steps__duration { white-space: nowrap; }
+
+/* A row's delete is a form, so it can be a DELETE; it reads as a quiet link. */
+button.link-quiet {
+  appearance: none;
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}

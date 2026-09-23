@@ -1,0 +1,34 @@
+<%= page_head "ingredients" do %>
+  <%= link_to "New ingredient", new_ingredient_path, class: "button button--primary" %>
+  <%= link_to "Families", ingredient_families_path, class: "button" %>
+<% end %>
+
+<% if @ingredients.any? %>
+  <table class="table">
+    <thead>
+      <tr>
+        <th scope="col">Name</th>
+        <th scope="col">Category</th>
+        <th scope="col">Default unit</th>
+        <th scope="col">Family</th>
+        <th scope="col"><span class="visually-hidden">Actions</span></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @ingredients.each do |ingredient| %>
+        <tr>
+          <td><%= ingredient.name %></td>
+          <td><%= ingredient.category %></td>
+          <td><%= ingredient.default_unit %></td>
+          <td><%= ingredient.ingredient_family&.name %></td>
+          <td class="run">
+            <%= link_to "Edit", edit_ingredient_path(ingredient), class: "link-quiet" %>
+            <%= delete_button ingredient_path(ingredient), quiet: true, confirm: "Delete #{ingredient.name}?" %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% else %>
+  <p class="empty">No ingredients yet. They are added as recipes are imported and receipts stocked.</p>
+<% end %>

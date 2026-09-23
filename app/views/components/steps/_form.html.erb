@@ -1,0 +1,9 @@
+<%= its_swiss_form_with model: step, url: step.new_record? ? component_steps_path(component) : step_path(step), class: "form measure" do |form| %>
+  <%= render "its_swiss/shared/errors", record: step %>
+  <%= form.number_field :position %>
+  <%= form.text_area :instructions, rows: 4 %>
+  <%= form.select :phase, Step.phases.keys, {}, hint: "Prep can be done ahead; plate happens at serving time." %>
+  <%= form.select :mode, Step.modes.keys, {}, hint: "Active needs hands; passive only waits." %>
+  <%= form.number_field :duration_minutes, label: "Minutes" %>
+  <%= form.submit step.new_record? ? "Add step" : "Save step" %>
+<% end %>

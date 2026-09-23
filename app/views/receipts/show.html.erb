@@ -1,6 +1,8 @@
 <%= turbo_stream_from @receipt %>
 
-<%= page_head "receipt", lede: [ @receipt.store, (l(@receipt.purchased_on, format: :long) if @receipt.purchased_on) ].compact.join(", ").presence %>
+<%= page_head "receipt", lede: [ @receipt.store, (l(@receipt.purchased_on, format: :long) if @receipt.purchased_on) ].compact.join(", ").presence do %>
+  <%= delete_button receipt_path(@receipt), confirm: "Delete this receipt? Anything already stocked from it stays in stock." %>
+<% end %>
 
 <% case @receipt.status %>
 <% when "pending", "processing" %>

@@ -1,4 +1,6 @@
-<%= page_head "import a recipe", lede: "From a recipe page's URL, pasted as text, or written by the model from the name of a dish." %>
+<%= page_head "import a recipe", lede: "From a recipe page's URL, pasted as text, or written by the model from the name of a dish." do %>
+  <%= link_to "Past imports", recipe_imports_path, class: "button button--quiet" %>
+<% end %>
 
 <%= its_swiss_form_with model: @recipe_import, class: "form measure" do |form| %>
   <%= render "its_swiss/shared/errors", record: @recipe_import %>

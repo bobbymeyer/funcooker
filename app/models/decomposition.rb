@@ -20,7 +20,7 @@ class Decomposition < ApplicationRecord
     lines = component.component_ingredients.includes(:ingredient, :ingredient_family).order(:id).to_a
     raise Error, "#{component.name} has no ingredients to break out" if lines.empty?
 
-    candidates = Component.where.not(id: [ component.id, *ancestor_ids ]).includes(component_ingredients: %i[ ingredient ingredient_family ]).order(:name).to_a
+    candidates = component.part_candidates.includes(component_ingredients: %i[ ingredient ingredient_family ]).to_a
     plan = Plan.new(component, lines:, candidates:).call
     raise Error, "Nothing to break out: the model found no components in #{component.name}" if plan[:components].empty?
 
@@ -39,15 +39,6 @@ class Decomposition < ApplicationRecord
   private
     def component_not_yet_decomposed
       errors.add(:component, "is already made of other components") if component&.child_parts&.exists?
-    end
-
-    def ancestor_ids
-      ids, frontier = [], [ component.id ]
-      while frontier.any?
-        frontier = ComponentPart.where(child_id: frontier).pluck(:parent_id) - ids
-        ids.concat(frontier)
-      end
-      ids
     end
 
     def snapshot(lines)

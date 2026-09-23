@@ -1,0 +1,9 @@
+<%= its_swiss_form_with model: part, url: part.new_record? ? component_parts_path(component) : part_path(part), class: "form measure" do |form| %>
+  <%= render "its_swiss/shared/errors", record: part %>
+  <%= form.collection_select :child_id, component.part_candidates, :id, :name, { include_blank: part.new_record? }, label: "Component" %>
+  <%= form.number_field :quantity, step: "any", label: "Amount for 1 adult" %>
+  <%= form.text_field :unit, hint: "A component is stored for 1 adult, so servings is the usual unit." %>
+  <%= form.collection_select :step_id, component.steps, :id, ->(step) { "#{step.position}. #{step.instructions.truncate(60)}" }, { include_blank: "—" },
+        label: "Used in step" %>
+  <%= form.submit part.new_record? ? "Add component" : "Save component" %>
+<% end %>

@@ -13,6 +13,18 @@ bin/setup --skip-server
 LLM_MODEL=<model id> bin/dev
 ```
 
+## library
+
+Every record the app shows can be created, edited and deleted.
+
+| Page | |
+| --- | --- |
+| `/components` | New, edit and delete components. On a component: add, edit and remove its ingredient lines (an ingredient by name, or any of a family), steps (position, prep or plate, active or passive, minutes) and sub-components. Deleting a component takes its lines and steps with it; one used inside another, in stock or on the schedule is not deleted |
+| `/ingredients` | New, edit and delete ingredients, and their families under **Families**. An ingredient used in a recipe or in stock is not deleted; deleting a family keeps its ingredients |
+| `/stock` | Add a lot by hand, edit or delete one. A lot's quantity only changes through a `StockTransaction`: one entered or corrected by hand is `manual` |
+| `/receipts` | Delete a receipt. What was stocked from it stays |
+| `/recipe_imports` | Past imports; delete one. The recipe it made stays |
+
 ## recipe import
 
 `/recipe_imports/new` takes a URL, pasted text, or the name of a dish. The import runs as a

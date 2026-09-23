@@ -1,5 +1,6 @@
 <%= page_head "components" do %>
   <%= link_to "Import a recipe", new_recipe_import_path, class: "button button--primary" %>
+  <%= link_to "New component", new_component_path, class: "button" %>
 <% end %>
 
 <% if @components.any? %>

@@ -13,15 +13,22 @@ Rails.application.routes.draw do
   # get "manifest" => "rails/pwa#manifest", as: :pwa_manifest
   # get "service-worker" => "rails/pwa#service_worker", as: :pwa_service_worker
 
-  resources :recipe_imports, only: %i[ new create show ]
-  resources :components, only: %i[ index show ] do
+  resources :recipe_imports, only: %i[ index new create show destroy ]
+  resources :components do
     resources :decompositions, only: :create, shallow: true
+    scope module: :components do
+      resources :ingredient_lines, only: %i[ new create edit update destroy ], shallow: true
+      resources :steps, only: %i[ new create edit update destroy ], shallow: true
+      resources :parts, only: %i[ new create edit update destroy ], shallow: true
+    end
   end
   resources :decompositions, only: :show
-  resources :receipts, only: %i[ index new create show ] do
+  resources :ingredients, except: :show
+  resources :ingredient_families, except: :show
+  resources :receipts, only: %i[ index new create show destroy ] do
     resource :confirmation, only: :create, module: :receipts
   end
-  resources :stock_items, only: :index, path: "stock"
+  resources :stock_items, except: :show, path: "stock"
 
   root "components#index"
 end

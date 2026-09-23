@@ -11,6 +11,7 @@ class Component < ApplicationRecord
   has_many :food_needs, as: :subject, dependent: :destroy
   has_many :schedule_entries, foreign_key: :dish_id, dependent: :restrict_with_error, inverse_of: :dish
   has_many :decompositions, dependent: :destroy
+  has_many :recipe_imports, dependent: :nullify
 
   validates :name, presence: true
   validates :source_url, format: { with: %r{\Ahttps?://\S+\z} }, allow_blank: true
@@ -35,6 +36,21 @@ class Component < ApplicationRecord
 
   def dish?
     !parent_parts.exists?
+  end
+
+  # Every component this one is part of, at any depth.
+  def ancestor_ids
+    ids, frontier = [], [ id ]
+    while frontier.any?
+      frontier = ComponentPart.where(child_id: frontier).pluck(:parent_id) - ids
+      ids.concat(frontier)
+    end
+    ids
+  end
+
+  # What can go inside this component without making a cycle.
+  def part_candidates
+    Component.where.not(id: [ id, *ancestor_ids ]).order(:name)
   end
 
   # This component and every component nested inside it, at any depth.
