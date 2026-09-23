@@ -1,0 +1,22 @@
+<%= its_swiss_form_with model: schedule_entry, url: schedule_entry.new_record? ? schedule_entries_path : schedule_entry_path(schedule_entry), class: "form measure" do |form| %>
+  <%= render "its_swiss/shared/errors", record: schedule_entry %>
+  <%= form.date_field :served_on, label: "Day" %>
+  <%= form.select :meal_slot, ScheduleEntry.meal_slots.keys, {}, label: "Meal" %>
+  <%= form.collection_select :dish_id, Component.dishes.order(:name), :id, :name, { include_blank: schedule_entry.new_record? }, label: "Dish" %>
+  <% if schedule_entry.persisted? %>
+    <%= form.select :status, ScheduleEntry.statuses.keys, {}, hint: "Skipping plans the days after it again." %>
+  <% end %>
+  <fieldset class="field">
+    <legend>Eating</legend>
+    <%= hidden_field_tag "schedule_entry[diner_ids][]", "" %>
+    <% chosen = schedule_entry.new_record? && !schedule_entry.diners.loaded? ? HouseholdMember.by_default.ids : schedule_entry.diner_ids %>
+    <% HouseholdMember.order(:name).each do |member| %>
+      <span class="choice">
+        <%= check_box_tag "schedule_entry[diner_ids][]", member.id, chosen.include?(member.id), id: "schedule_entry_diner_#{member.id}" %>
+        <%= label_tag "schedule_entry_diner_#{member.id}", "#{member.name}#{" (#{quantity(member.portion)})" if member.portion != 1}" %>
+      </span>
+    <% end %>
+    <p class="hint">Everyone who eats by default is ticked on a new meal. Nobody at the meal may be restricted from its dish.</p>
+  </fieldset>
+  <%= form.submit schedule_entry.new_record? ? "Add meal" : "Save meal" %>
+<% end %>

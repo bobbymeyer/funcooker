@@ -29,6 +29,17 @@ Rails.application.routes.draw do
     resource :confirmation, only: :create, module: :receipts
   end
   resources :stock_items, except: :show, path: "stock"
+  resources :schedule_entries, except: :show, path: "schedule" do
+    collection { post :plan }
+    member do
+      post :serve
+      post :skip
+      post :ease
+    end
+  end
+  resources :household_members, except: :show, path: "household" do
+    resources :food_needs, only: %i[ create edit update destroy ], shallow: true, module: :household_members
+  end
 
   root "components#index"
 end

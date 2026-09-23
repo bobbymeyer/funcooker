@@ -1,0 +1,5 @@
+<%= render "its_swiss/shared/errors", record: form.object %>
+<%= form.select :subject_key, food_need_subject_options(form.object.subject_key), { include_blank: form.object.new_record? }, label: "Food" %>
+<%= form.select :tier, [ [ "Can't eat (restriction)", "restriction" ], [ "Preference", "preference" ] ], {},
+      label: "Kind", hint: "A restriction keeps a dish off the plan. A preference only moves its score." %>
+<%= form.select :sentiment, FoodNeed.sentiments.keys, {}, label: "Preference", hint: "Only for a preference." %>

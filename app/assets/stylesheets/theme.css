@@ -73,3 +73,6 @@ button.link-quiet {
   text-decoration: underline;
   cursor: pointer;
 }
+
+.up-next__dish { font-size: var(--size-4); line-height: var(--line-3); font-weight: bold; }
+.schedule__past { color: var(--ink-quiet); }

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_23_171246) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_23_192951) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.bigint "blob_id", null: false
     t.datetime "created_at", null: false
@@ -90,6 +90,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_23_171246) do
   create_table "food_needs", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.integer "household_member_id", null: false
+    t.integer "sentiment", default: 1, null: false
     t.integer "subject_id", null: false
     t.string "subject_type", null: false
     t.integer "tier", default: 0, null: false
@@ -100,7 +101,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_23_171246) do
 
   create_table "household_members", force: :cascade do |t|
     t.datetime "created_at", null: false
+    t.boolean "eats_by_default", default: true, null: false
     t.string "name", null: false
+    t.decimal "portion", default: "1.0", null: false
     t.datetime "updated_at", null: false
   end
 
@@ -120,6 +123,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_23_171246) do
     t.datetime "updated_at", null: false
     t.index ["ingredient_family_id"], name: "index_ingredients_on_ingredient_family_id"
     t.index ["name"], name: "index_ingredients_on_name", unique: true
+  end
+
+  create_table "meal_diners", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.integer "household_member_id", null: false
+    t.integer "schedule_entry_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["household_member_id"], name: "index_meal_diners_on_household_member_id"
+    t.index ["schedule_entry_id", "household_member_id"], name: "index_meal_diners_on_schedule_entry_id_and_household_member_id", unique: true
+    t.index ["schedule_entry_id"], name: "index_meal_diners_on_schedule_entry_id"
   end
 
   create_table "receipt_lines", force: :cascade do |t|
@@ -166,11 +179,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_23_171246) do
     t.datetime "created_at", null: false
     t.integer "dish_id", null: false
     t.integer "meal_slot", default: 2, null: false
-    t.boolean "restrictions_overridden", default: false, null: false
+    t.integer "origin", default: 0, null: false
     t.date "served_on", null: false
     t.integer "status", default: 0, null: false
     t.datetime "updated_at", null: false
     t.index ["dish_id"], name: "index_schedule_entries_on_dish_id"
+    t.index ["served_on", "meal_slot"], name: "index_schedule_entries_on_served_on_and_meal_slot"
   end
 
   create_table "steps", force: :cascade do |t|
@@ -221,6 +235,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_23_171246) do
   add_foreign_key "decompositions", "components"
   add_foreign_key "food_needs", "household_members"
   add_foreign_key "ingredients", "ingredient_families"
+  add_foreign_key "meal_diners", "household_members"
+  add_foreign_key "meal_diners", "schedule_entries"
   add_foreign_key "receipt_lines", "receipts"
   add_foreign_key "receipt_lines", "stock_items"
   add_foreign_key "recipe_imports", "components"

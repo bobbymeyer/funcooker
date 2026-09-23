@@ -57,6 +57,55 @@ tokens, a source with no ingredients and no steps, and a serving count that
 is not above 0 each fail the import,
 with the reason on its page.
 
+## schedule
+
+`/schedule` shows the meal up next with **Served**, **Skip** and **I'm
+tired**, a plan form, and the meals from a week back to four weeks ahead.
+
+**Plan** fills the chosen meals (breakfast, lunch, dinner) over the chosen
+days, one slot at a time in date order, for everyone who eats by default.
+Dishes that any of them is restricted from are never candidates. The rest are scored, and the highest wins;
+ties go to the dish name.
+
+| Signal | Scores | Weight |
+| --- | --- | --- |
+| Stock | How much of the dish is on hand, 0 to 1. A component on hand covers everything in it; a family slot is covered by any member | 3 |
+| Expiry | Each on-hand lot it uses that expires within 4 days, sooner counting more. A lot counts for one dish per plan | 2 |
+| Share | The share of its ingredients also in dishes planned within 3 days | 1 |
+| Repeat | The same dish within 7 days, closer counting more | −4 |
+| Likes | +1 for each diner who likes something in it, −1 for each who dislikes something in it | 1 |
+
+| Origin | Put there by | When the plan is derived again |
+| --- | --- | --- |
+| planner | **Plan** | Replaced |
+| hand | **Add a meal**, or any meal edited by hand | Kept |
+| freezer | **I'm tired** | Kept |
+
+**Skip** marks the meal skipped and derives every planned meal after it again,
+from the stock and dates as they are now. **I'm tired** marks the meal swapped
+and puts in its place, for the same people, the frozen meal that expires
+soonest that none of them is restricted from. A lot counted in servings must
+have enough for them.
+
+Each meal lists who is eating it and the servings that makes: the sum of
+their portions. A new meal starts with everyone who eats by default; tick
+anyone else in on the meals they come to. A dish anyone at the meal is
+restricted from is refused, naming them. There is no override: a restriction
+is something they do not eat. One meal per slot.
+
+## household
+
+`/household` lists who eats.
+
+| Field | |
+| --- | --- |
+| Portion | Adult servings they eat, since recipes are stored for one adult: 1 is an adult, 0.5 a small child |
+| Eats with us by default | Seated at every new meal. Someone who comes a couple of times a week is left unticked and added to those meals |
+
+Each member's page adds, edits and removes their food needs: an ingredient, a
+family or a component, as a restriction (never planned when they are eating)
+or a preference that they like or dislike (scored).
+
 ## decompose
 
 A component's page has **Decompose** while it is not yet made of other

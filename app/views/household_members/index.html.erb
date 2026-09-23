@@ -1,0 +1,38 @@
+<%= page_head "household", lede: "Everyone at a meal must be able to eat it. Portions scale recipes, which are stored for one adult." do %>
+  <%= link_to "Add someone", new_household_member_path, class: "button button--primary" %>
+<% end %>
+
+<% if @household_members.any? %>
+  <table class="table">
+    <thead>
+      <tr>
+        <th scope="col">Name</th>
+        <th scope="col" class="numeric">Portion</th>
+        <th scope="col">By default</th>
+        <th scope="col">Can't eat</th>
+        <th scope="col">Likes</th>
+        <th scope="col">Dislikes</th>
+        <th scope="col"><span class="visually-hidden">Actions</span></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @household_members.each do |member| %>
+        <% needs = member.food_needs %>
+        <tr>
+          <td><%= member.name %></td>
+          <td class="numeric"><%= quantity(member.portion) %></td>
+          <td><%= member.eats_by_default? ? "yes" : "no" %></td>
+          <td><%= needs.select(&:restriction?).map { |need| need.subject.name }.sort.join(", ") %></td>
+          <td><%= needs.select { |need| need.preference? && need.likes? }.map { |need| need.subject.name }.sort.join(", ") %></td>
+          <td><%= needs.select { |need| need.preference? && need.dislikes? }.map { |need| need.subject.name }.sort.join(", ") %></td>
+          <td class="run">
+            <%= link_to "Edit", edit_household_member_path(member), class: "link-quiet" %>
+            <%= delete_button household_member_path(member), quiet: true, confirm: "Remove #{member.name} and their food needs?" %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% else %>
+  <p class="empty">Nobody yet. Recipes are stored for one adult; the household is who the plan is for.</p>
+<% end %>

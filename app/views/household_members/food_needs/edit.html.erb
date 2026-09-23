@@ -1,0 +1,5 @@
+<%= page_head "edit food need", lede: link_to(@household_member.name, edit_household_member_path(@household_member)) %>
+<%= its_swiss_form_with model: @food_need, url: food_need_path(@food_need), class: "form measure" do |form| %>
+  <%= render "household_members/food_needs/fields", form: %>
+  <%= form.submit "Save" %>
+<% end %>
