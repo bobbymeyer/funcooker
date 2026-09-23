@@ -14,7 +14,10 @@ Rails.application.routes.draw do
   # get "service-worker" => "rails/pwa#service_worker", as: :pwa_service_worker
 
   resources :recipe_imports, only: %i[ new create show ]
-  resources :components, only: %i[ index show ]
+  resources :components, only: %i[ index show ] do
+    resources :decompositions, only: :create, shallow: true
+  end
+  resources :decompositions, only: :show
   resources :receipts, only: %i[ index new create show ] do
     resource :confirmation, only: :create, module: :receipts
   end

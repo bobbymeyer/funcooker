@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_23_162723) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_23_171246) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.bigint "blob_id", null: false
     t.datetime "created_at", null: false
@@ -75,6 +75,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_23_162723) do
     t.string "name", null: false
     t.string "source_url"
     t.datetime "updated_at", null: false
+  end
+
+  create_table "decompositions", force: :cascade do |t|
+    t.integer "component_id", null: false
+    t.datetime "created_at", null: false
+    t.text "error"
+    t.json "original"
+    t.integer "status", default: 0, null: false
+    t.datetime "updated_at", null: false
+    t.index ["component_id"], name: "index_decompositions_on_component_id"
   end
 
   create_table "food_needs", force: :cascade do |t|
@@ -208,6 +218,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_23_162723) do
   add_foreign_key "component_parts", "components", column: "child_id"
   add_foreign_key "component_parts", "components", column: "parent_id"
   add_foreign_key "component_parts", "steps"
+  add_foreign_key "decompositions", "components"
   add_foreign_key "food_needs", "household_members"
   add_foreign_key "ingredients", "ingredient_families"
   add_foreign_key "receipt_lines", "receipts"

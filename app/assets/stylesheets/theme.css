@@ -60,4 +60,5 @@
    main.grid > .page-head { --span: 4; }
 */
 
-.steps .numeric { width: 3ch; }
+.steps .steps__position { width: 3ch; }
+.steps .steps__duration { white-space: nowrap; }

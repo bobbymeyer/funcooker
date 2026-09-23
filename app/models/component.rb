@@ -10,6 +10,7 @@ class Component < ApplicationRecord
   has_many :stock_items, as: :stockable, dependent: :restrict_with_error
   has_many :food_needs, as: :subject, dependent: :destroy
   has_many :schedule_entries, foreign_key: :dish_id, dependent: :restrict_with_error, inverse_of: :dish
+  has_many :decompositions, dependent: :destroy
 
   validates :name, presence: true
   validates :source_url, format: { with: %r{\Ahttps?://\S+\z} }, allow_blank: true
@@ -25,6 +26,11 @@ class Component < ApplicationRecord
   # Where the recipe came from, when that is a web page, safe to link.
   def source_link
     source_url if source_url.to_s.match?(%r{\Ahttps?://\S+\z})
+  end
+
+  # A recipe not yet broken into components, with ingredients to break out.
+  def decomposable?
+    !child_parts.exists? && component_ingredients.exists?
   end
 
   def dish?
