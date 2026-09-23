@@ -28,5 +28,7 @@ module Funcooker
     # an id from its /v1/models.
     config.x.llm.base_url = ENV.fetch("LLM_BASE_URL", "https://chat.bobbymeyer.com/v1")
     config.x.llm.model = ENV["LLM_MODEL"]
+    # For requests with an image, when LLM_MODEL cannot read one.
+    config.x.llm.vision_model = ENV["LLM_VISION_MODEL"]
   end
 end

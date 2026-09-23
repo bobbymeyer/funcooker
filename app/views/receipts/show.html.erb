@@ -1,0 +1,15 @@
+<%= turbo_stream_from @receipt %>
+
+<%= page_head "receipt", lede: [ @receipt.store, (l(@receipt.purchased_on, format: :long) if @receipt.purchased_on) ].compact.join(", ").presence %>
+
+<% case @receipt.status %>
+<% when "pending", "processing" %>
+  <p class="empty">Reading the receipt. This page updates when it is done.</p>
+<% when "failed" %>
+  <p class="errors"><%= @receipt.error %></p>
+  <p><%= link_to "Try again", new_receipt_path %></p>
+<% when "parsed" %>
+  <%= render "receipts/confirmation", receipt: @receipt %>
+<% when "confirmed" %>
+  <%= render "receipts/stocked", receipt: @receipt %>
+<% end %>

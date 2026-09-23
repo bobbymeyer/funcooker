@@ -40,6 +40,8 @@ management, and a scheduler that ties them together.
 | `Step` | Belongs to a `Component`. `position`, `phase` (`prep`/`plate`), `mode` (`active`/`passive`), `duration_minutes`, `instructions` |
 | `StockItem` | One lot. `stockable` (`Ingredient` or `Component`), `kind`, `quantity`, `unit`, `acquired_on`, `expires_on` |
 | `StockTransaction` | `StockItem`, `delta`, `source` (`receipt`, `manual`, `step_consumption`, `step_production`), optional `Step` |
+| `Receipt` | A photo or pasted text, `store`, `purchased_on`, `status` (`pending`/`processing`/`parsed`/`failed`/`confirmed`) |
+| `ReceiptLine` | `Receipt`, `description` as printed, `ingredient_name`, `quantity`, `unit`, `expires_on`, `included`, the `StockItem` it became |
 | `HouseholdMember` | `name` |
 | `FoodNeed` | `HouseholdMember`, polymorphic `subject` (`Ingredient`, `IngredientFamily`, `Component`), `tier`: `restriction` or `preference` |
 | `ScheduleEntry` | `served_on`, `meal_slot` (`breakfast`/`lunch`/`dinner`), dish, `status` (`planned`/`served`/`skipped`/`swapped`), `restrictions_overridden` |
@@ -145,9 +147,15 @@ necessarily a dependency).
 
 - Each `StockItem` is a lot with `acquired_on` and `expires_on`, so "what's
   near expiry" is queryable and feeds the scheduler's soft preferences.
-- Receipt photo → same LLM extraction pattern as the recipe importer → line
-  items fuzzy-matched to canonical `Ingredient` → confirmation step → batch
-  `StockTransaction` write.
+- Receipt photo or pasted text → same LLM extraction pattern as the recipe
+  importer → line items matched to canonical `Ingredient` → confirmation step
+  → batch `StockTransaction` write.
+- Matching is done by the model: it is given every known ingredient name and
+  reuses one when a line is the same thing. Anything else is a new
+  ingredient, marked as such at confirmation.
+- The model estimates each item's shelf life; the confirmation step can
+  change it.
+- Photos need a vision-capable model on llama-swap.
 - Stock decrements automatically as `Step`s (prep or plate) consume
   ingredients/components. Prep also produces a new `Component` `StockItem`.
 

@@ -1,0 +1,26 @@
+<table class="table">
+  <thead>
+    <tr>
+      <th scope="col">On the receipt</th>
+      <th scope="col">Stocked as</th>
+      <th scope="col" class="numeric">Quantity</th>
+      <th scope="col">Unit</th>
+      <th scope="col">Keeps until</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% receipt.lines.each do |line| %>
+      <tr>
+        <td><%= line.description %></td>
+        <% if line.stock_item %>
+          <td><%= line.ingredient_name %></td>
+          <td class="numeric"><%= number_with_precision(line.quantity, strip_insignificant_zeros: true, precision: 3) %></td>
+          <td><%= line.unit %></td>
+          <td><%= l(line.expires_on, format: :long) if line.expires_on %></td>
+        <% else %>
+          <td colspan="4" class="hint">left out</td>
+        <% end %>
+      </tr>
+    <% end %>
+  </tbody>
+</table>

@@ -1,0 +1,11 @@
+<%= page_head "add a receipt", lede: "A photo of it, or its text pasted. Nothing is stocked until you confirm the lines." %>
+
+<%= its_swiss_form_with model: @receipt, class: "form measure" do |form| %>
+  <%= render "its_swiss/shared/errors", record: @receipt %>
+  <div class="field<%= " field--invalid" if @receipt.errors[:photo].any? %>">
+    <%= form.label :photo, "Photo" %>
+    <%= form.file_field :photo, accept: Receipt::IMAGE_TYPES.join(",") %>
+  </div>
+  <%= form.text_area :source_text, label: "Or paste the receipt", rows: 12 %>
+  <%= form.submit "Read receipt" %>
+<% end %>

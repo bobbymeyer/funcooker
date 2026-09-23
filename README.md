@@ -45,17 +45,45 @@ tokens, a source with no ingredients and no steps, and a serving count that
 is not above 0 each fail the import,
 with the reason on its page.
 
-### configuration
+## receipts
+
+`/receipts/new` takes a photo of a grocery receipt (JPEG, PNG or WebP) or its
+text, pasted. The model reads it in a background job into lines, and the
+receipt's page refreshes onto them.
+
+| The model gives | |
+| --- | --- |
+| Store and purchase date | The date falls back to the day the receipt was added |
+| Each item | Named as a plain ingredient, reusing an existing `Ingredient`'s name when it is the same thing |
+| Quantity and unit | The total bought: "2 @ MILK 1 GAL" is 2 gal; weighed items by weight; counted items by count |
+| Food or not | Non-food lines start unticked |
+| Shelf life | How long it keeps at home, turned into a date from the purchase date |
+
+Totals, tax, payments, discounts, coupons, deposits and bag fees are left out.
+
+Every line is editable before anything is stocked: whether it is included,
+its ingredient, quantity, unit and keep-until date. An ingredient not yet in
+the library is marked new. **Stock these** makes one raw `StockItem` lot per
+included line, recorded as a `receipt` transaction, and creates any new
+ingredients. An included line needs an ingredient and a quantity above 0. A
+receipt is stocked once.
+
+## stock
+
+`/stock` lists every lot on hand, soonest to expire first.
+
+## configuration
 
 | Variable | Default | |
 | --- | --- | --- |
 | `LLM_BASE_URL` | `https://chat.bobbymeyer.com/v1` | Any OpenAI-compatible endpoint |
 | `LLM_MODEL` | none — required | An id from `$LLM_BASE_URL/models` |
-| `SOLID_QUEUE_IN_PUMA` | unset | Production: runs import jobs inside Puma |
+| `LLM_VISION_MODEL` | `LLM_MODEL` | The model receipt photos go to. It must accept images |
+| `SOLID_QUEUE_IN_PUMA` | unset | Production: runs import and receipt jobs inside Puma |
 
 Each request asks for `temperature: 0`, a `json_schema` response format, and
 `chat_template_kwargs: {enable_thinking: false}`, and waits up to 600 seconds
-for the reply.
+for the reply. A photo is sent inline as a base64 `image_url` part.
 
 To list the model ids, from a machine on the tailnet:
 
