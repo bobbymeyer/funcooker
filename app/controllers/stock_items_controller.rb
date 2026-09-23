@@ -1,4 +1,6 @@
 class StockItemsController < ApplicationController
+  USE_FIRST_DAYS = 3
+
   before_action :set_stock_item, only: %i[ edit update destroy ]
 
   def index

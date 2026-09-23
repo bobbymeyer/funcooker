@@ -24,6 +24,7 @@ class RecipeImport < ApplicationRecord
   def process
     processing!
     update!(status: :succeeded, component: build_component(extract))
+    component.estimate_shelf_life_later
   rescue Error, Llm::Error => e
     update!(status: :failed, error: e.message)
   rescue => e

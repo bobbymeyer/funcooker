@@ -2,8 +2,13 @@
 # (i1, i2, …) and the model can only refer to those, so it cannot invent an
 # ingredient; an existing component can only be named from the candidates.
 #
-#   { components: [{ name:, existing:, servings:, ingredients: [...], steps: [...] }],
+#   { verdict:, reason:, caveats: [...],
+#     components: [{ name:, existing:, servings:, ingredients: [...], steps: [...] }],
 #     ingredients: [{ line:, amount:, unit:, note: }], steps: [{ ..., uses: [...] }] }
+#
+# The verdict is the model's judgement first: decompose, atomic (nothing
+# worth making on its own), or borderline (a part could be made apart, at a
+# cost to the dish, which the caveats say).
 class Decomposition::Plan
   CANDIDATE_LIMIT = 300
 
@@ -15,6 +20,13 @@ class Decomposition::Plan
     Llm.extract(schema:, input:, instructions: <<~TEXT).deep_symbolize_keys
       You break a recipe into its components: the parts that can be made ahead on their own and reused in other dishes, like a sauce, a marinade, a dressing, a spice mix, cooked rice or a dough. Then you rewrite the recipe to use them.
       The recipe is written for one adult. Keep its amounts.
+
+      Judge first, and be honest about it. Making something apart is only worth it when the dish is as good for it.
+      - verdict: decompose when it has parts that can be made ahead with nothing lost.
+      - verdict: atomic when nothing in it can meaningfully be made on its own: it is already one thing, or its parts only work cooked together (a vinaigrette, a stir-fry where everything goes in one pan, an omelette). Then leave components, ingredients and steps empty.
+      - verdict: borderline when a part could be made apart but the dish suffers for it. For example, the meat for a bolognese could be braised on its own, but the sauce then loses the fond and the depth it builds cooking with the meat. Give the plan anyway, and list what is lost.
+      - reason: one or two plain sentences on why.
+      - caveats: for borderline, each thing the dish loses by splitting it, one per entry. Otherwise empty.
 
       - components: each part worth making on its own. Leave out anything that is only an ingredient, or only assembly.
         - When a known component below is the same thing or very close to it, reuse it: set existing to its name exactly, servings to how many of its servings this dish uses for one adult (usually 1), ingredients to the recipe's lines it takes the place of, and steps empty. Known components are also written for one adult.
@@ -95,6 +107,9 @@ class Decomposition::Plan
       {
         type: "object",
         properties: {
+          verdict: { type: "string", enum: %w[ decompose atomic borderline ] },
+          reason: { type: "string" },
+          caveats: { type: "array", items: { type: "string" } },
           components: {
             type: "array",
             items: {
@@ -113,7 +128,7 @@ class Decomposition::Plan
           ingredients: { type: "array", items: line_ref },
           steps: { type: "array", items: dish_step }
         },
-        required: %w[ components ingredients steps ],
+        required: %w[ verdict reason caveats components ingredients steps ],
         additionalProperties: false
       }
     end

@@ -109,16 +109,83 @@ class DecompositionTest < ActiveSupport::TestCase
     end
   end
 
-  test "a recipe the model finds no components in fails, and is left as it was" do
-    stub_llm components: [], ingredients: [], steps: []
+  test "a recipe the model judges atomic is declined with its reason, and left as it was" do
+    stub_llm verdict: "atomic", reason: "Everything cooks together in one pan.", caveats: [], components: [], ingredients: [], steps: []
 
     decomposition = @tacos.decompositions.create!
     decomposition.process
 
-    assert decomposition.failed?
-    assert_match "Nothing to break out", decomposition.error
+    assert decomposition.declined?
+    assert_equal "Everything cooks together in one pan.", decomposition.reason
     assert_equal 6, @tacos.component_ingredients.count
     assert_equal 3, @tacos.steps.count
+  end
+
+  test "a plan with nothing in it is declined too" do
+    stub_llm verdict: "decompose", reason: "", caveats: [], components: [], ingredients: [], steps: []
+
+    decomposition = @tacos.decompositions.create!
+    decomposition.process
+
+    assert decomposition.declined?
+    assert_match "nothing in Beef tacos worth making on its own", decomposition.reason
+  end
+
+  test "a borderline recipe waits, with its caveats, and changes nothing until confirmed" do
+    stub_llm PLAN.merge(verdict: "borderline", reason: "The beef could be browned ahead.", caveats: [ "The tortillas lose the fresh beef fat." ])
+
+    decomposition = @tacos.decompositions.create!
+    decomposition.process
+
+    assert decomposition.awaiting?
+    assert_equal [ "The tortillas lose the fresh beef fat." ], decomposition.caveats
+    assert_equal 6, @tacos.component_ingredients.count
+    assert_empty @tacos.child_parts
+
+    decomposition.confirm!
+
+    assert decomposition.reload.succeeded?
+    assert_equal [ "salsa verde", "seasoned beef" ], @tacos.children.order(:id).map(&:name)
+  end
+
+  test "a borderline recipe can be left as it is" do
+    stub_llm PLAN.merge(verdict: "borderline", reason: "Maybe.", caveats: [])
+    decomposition = @tacos.decompositions.create!
+    decomposition.process
+
+    decomposition.dismiss!
+
+    assert decomposition.dismissed?
+    assert_raises(Decomposition::Error) { decomposition.confirm! }
+  end
+
+  test "a borderline plan is not applied to a recipe changed since" do
+    stub_llm PLAN.merge(verdict: "borderline", reason: "Maybe.", caveats: [])
+    decomposition = @tacos.decompositions.create!
+    decomposition.process
+    @tacos.component_ingredients.last.destroy!
+
+    error = assert_raises(Decomposition::Error) { decomposition.confirm! }
+    assert_match "has changed since it was judged", error.message
+    assert_empty @tacos.child_parts
+  end
+
+  test "new components get their shelf life estimated" do
+    stub_llm PLAN
+
+    decomposition = @tacos.decompositions.create!
+    assert_enqueued_with(job: ShelfLifeJob) { decomposition.process }
+  end
+
+  test "the model is asked to judge first" do
+    stub_llm PLAN
+    @tacos.decompositions.create!.process
+
+    assert_requested :post, LlmStubs::LLM_URL do |request|
+      body = JSON.parse(request.body)
+      body["messages"].first["content"].include?("bolognese") &&
+        body.dig("response_format", "json_schema", "schema", "properties", "verdict", "enum") == %w[ decompose atomic borderline ]
+    end
   end
 
   test "a failure part way through changes nothing" do

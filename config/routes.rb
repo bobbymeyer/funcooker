@@ -15,6 +15,8 @@ Rails.application.routes.draw do
 
   resources :recipe_imports, only: %i[ index new create show destroy ]
   resources :components do
+    collection { post :estimate_shelf_lives }
+    member { post :estimate_shelf_life }
     resources :decompositions, only: :create, shallow: true
     scope module: :components do
       resources :ingredient_lines, only: %i[ new create edit update destroy ], shallow: true
@@ -22,7 +24,12 @@ Rails.application.routes.draw do
       resources :parts, only: %i[ new create edit update destroy ], shallow: true
     end
   end
-  resources :decompositions, only: :show
+  resources :decompositions, only: :show do
+    member do
+      post :confirm
+      post :dismiss
+    end
+  end
   resources :ingredients, except: :show
   resources :ingredient_families, except: :show
   resources :receipts, only: %i[ index new create show destroy ] do

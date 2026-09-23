@@ -1,0 +1,29 @@
+<table class="table">
+  <thead>
+    <tr>
+      <th scope="col">Item</th>
+      <th scope="col">Kind</th>
+      <th scope="col" class="numeric">Quantity</th>
+      <th scope="col">Unit</th>
+      <th scope="col">Acquired</th>
+      <th scope="col">Keeps</th>
+      <th scope="col"><span class="visually-hidden">Actions</span></th>
+    </tr>
+  </thead>
+  <tbody>
+    <% items.each do |item| %>
+      <tr class="<%= "stock--expired" if item.expires_on && item.expires_on < Date.current %>">
+        <td><%= item.stockable.is_a?(Component) ? link_to(item.stockable.name, item.stockable) : item.stockable.name %></td>
+        <td><%= item.kind.humanize(capitalize: false) %></td>
+        <td class="numeric"><%= quantity(item.quantity) %></td>
+        <td><%= item.unit %></td>
+        <td><%= l(item.acquired_on, format: :long) if item.acquired_on %></td>
+        <td><%= keeps_until(item.expires_on) %></td>
+        <td class="run">
+          <%= link_to "Edit", edit_stock_item_path(item), class: "link-quiet" %>
+          <%= delete_button stock_item_path(item), quiet: true, confirm: "Delete this #{item.stockable.name} lot?" %>
+        </td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>

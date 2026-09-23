@@ -86,3 +86,6 @@ button.link-quiet {
 .timers__item strong { font-variant-numeric: tabular-nums; }
 .timer--done { color: var(--accent); }
 form.inline { display: inline; }
+.stock--expired { color: var(--accent); }
+.judgement { margin-block: var(--line); padding-inline-start: var(--space-2); border-inline-start: var(--rule-heavy) solid var(--rule-strong); }
+.judgement__caveats { list-style: disc; padding-inline-start: var(--space-3); }

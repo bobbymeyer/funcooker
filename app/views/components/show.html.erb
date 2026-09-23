@@ -6,8 +6,38 @@
   <%= delete_button component_path(@component), confirm: "Delete #{@component.name}, its ingredients and its steps?" %>
 <% end %>
 
-<% if @component.shelf_life_days %>
-  <p class="hint">Keeps <%= pluralize(@component.shelf_life_days, "day") %> once prepped.</p>
+<%= turbo_stream_from @component %>
+
+<p class="hint">
+  <% if @component.shelf_life_days %>
+    Keeps <%= pluralize(@component.shelf_life_days, "day") %> once prepped<%= " (estimated: #{@component.shelf_life_note})" if @component.shelf_life_note %>.
+  <% else %>
+    No shelf life yet.
+  <% end %>
+</p>
+<%= button_to @component.shelf_life_days ? "Estimate again" : "Estimate shelf life", estimate_shelf_life_component_path(@component), class: "link-quiet" %>
+
+<% if (judged = @component.decompositions.where(status: %i[ declined awaiting ]).order(:id).last) && @component.child_parts.none? %>
+  <section class="judgement">
+    <% if judged.declined? %>
+      <p><strong>Not decomposed.</strong> <%= judged.reason %></p>
+    <% else %>
+      <p><strong>Borderline.</strong> <%= judged.reason %></p>
+      <p>It would break out: <%= judged.plan["components"].map { |part| part["existing"].presence || part["name"] }.to_sentence %>.</p>
+      <% if judged.caveats.present? %>
+        <p>What the dish loses:</p>
+        <ul class="judgement__caveats">
+          <% judged.caveats.each do |caveat| %>
+            <li><%= caveat %></li>
+          <% end %>
+        </ul>
+      <% end %>
+      <div class="run">
+        <%= button_to "Decompose anyway", confirm_decomposition_path(judged), class: "button" %>
+        <%= button_to "Leave it", dismiss_decomposition_path(judged), class: "button button--quiet" %>
+      </div>
+    <% end %>
+  </section>
 <% end %>
 
 <% if link = @component.source_link %>
