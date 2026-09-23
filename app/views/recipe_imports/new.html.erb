@@ -1,8 +1,12 @@
-<%= page_head "import a recipe", lede: "From a recipe page's URL, or pasted as text." %>
+<%= page_head "import a recipe", lede: "From a recipe page's URL, pasted as text, or written by the model from the name of a dish." %>
 
 <%= its_swiss_form_with model: @recipe_import, class: "form measure" do |form| %>
   <%= render "its_swiss/shared/errors", record: @recipe_import %>
   <%= form.url_field :source_url, label: "URL" %>
   <%= form.text_area :source_text, label: "Or paste the recipe", rows: 12 %>
+  <%= form.text_field :dish_name, label: "Or name a dish",
+        hint: "Say what is store-bought: pasta and red sauce, store-bought noodles and sauce." %>
+  <%= form.select :sophistication, RecipeImport.sophistications.keys.map { |level| [ sophistication_label(level), level ] }, {},
+        label: "Written by", hint: "Only for a named dish." %>
   <%= form.submit "Import" %>
 <% end %>

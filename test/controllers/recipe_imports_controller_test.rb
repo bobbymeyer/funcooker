@@ -17,6 +17,23 @@ class RecipeImportsControllerTest < ActionDispatch::IntegrationTest
     assert_select "p", /Importing/
   end
 
+  test "create with a named dish" do
+    post recipe_imports_path, params: { recipe_import: { source_url: "", source_text: "", dish_name: "eggs and toast", sophistication: "home_cook" } }
+
+    assert_redirected_to RecipeImport.last
+    assert_equal "eggs and toast", RecipeImport.last.dish_name
+    assert RecipeImport.last.home_cook?
+    follow_redirect!
+    assert_select "p.lede", "eggs and toast, by a home cook"
+  end
+
+  test "the form offers every level" do
+    get new_recipe_import_path
+    assert_select "select#recipe_import_sophistication option", [ "divorced dad", "home cook", "Michelin chef" ].size
+    assert_select "option[selected]", "divorced dad"
+    assert_select "label[for=recipe_import_sophistication]", "Written by"
+  end
+
   test "create with no source re-renders the form" do
     post recipe_imports_path, params: { recipe_import: { source_url: "", source_text: "" } }
     assert_response :unprocessable_entity

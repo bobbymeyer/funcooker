@@ -20,6 +20,6 @@ class RecipeImportsController < ApplicationController
 
   private
     def recipe_import_params
-      params.expect(recipe_import: %i[ source_url source_text ])
+      params.expect(recipe_import: %i[ source_url source_text dish_name sophistication ])
     end
 end

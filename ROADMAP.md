@@ -25,7 +25,7 @@ management, and a scheduler that ties them together.
   No separate API/SPA layer.
 - UI on [its-swiss](https://github.com/bobbymeyer/its-swiss).
 - Recipe import and receipt parsing use LLM calls with a fixed, constrained
-  output schema (structured extraction, not open-ended generation).
+  output schema (structured extraction; generation only for simple dishes).
 
 ## data model
 
@@ -36,7 +36,7 @@ management, and a scheduler that ties them together.
 | `Component` | Modular building block / sub-recipe — `name`, `description`, `source_url`. Has its own `Step`s. Nests inside other `Component`s through `ComponentPart` |
 | Dish | A `Component` that is not the child of any other `Component`. Not a table or subclass: `Component.dishes`, `Component#dish?` |
 | `ComponentPart` | Parent `Component` → child `Component`, `quantity`, `unit`, optional consuming `Step`. No cycles |
-| `ComponentIngredient` | `Component` → exactly one of a locked `Ingredient` or a substitutable `IngredientFamily`, `quantity`, `unit`, `note`, optional consuming `Step` |
+| `ComponentIngredient` | `Component` → exactly one of a locked `Ingredient` or a substitutable `IngredientFamily`, `quantity` for 1 adult, `unit`, `note`, optional consuming `Step` |
 | `Step` | Belongs to a `Component`. `position`, `phase` (`prep`/`plate`), `mode` (`active`/`passive`), `duration_minutes`, `instructions` |
 | `StockItem` | One lot. `stockable` (`Ingredient` or `Component`), `kind`, `quantity`, `unit`, `acquired_on`, `expires_on` |
 | `StockTransaction` | `StockItem`, `delta`, `source` (`receipt`, `manual`, `step_consumption`, `step_production`), optional `Step` |
@@ -75,9 +75,17 @@ The household eats together, so every member's restrictions apply to every
    cookbook page takes it too, through a vision model.
 3. Ingredient lines come back parsed as `{amount, unit, ingredient, note}`.
    From JSON-LD, only the ingredient lines go to the model.
-4. Imported recipes land as a single `Component`. Breaking them into
+4. A dish too simple for a recipe site or cookbook (pasta with jarred sauce,
+   eggs and toast) can be named instead, and the model writes it for
+   ingredient and component tracking. A sophistication scale sets how far it
+   goes: divorced dad (the default — the simplest possible version, nothing
+   clever or fancy), home cook, Michelin chef.
+5. Recipes are always stored for 1 adult. The model reports how many adult
+   servings the source makes; the import divides. Later steps scale up to
+   whoever is eating.
+6. Imported recipes land as a single `Component`. Breaking them into
    reusable sub-components is manual.
-5. The model is served by llama-swap on the Studio, over its
+7. The model is served by llama-swap on the Studio, over its
    OpenAI-compatible API. Extraction runs as a background job.
 
 Reference for site coverage/patterns:
