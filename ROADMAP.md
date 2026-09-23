@@ -50,7 +50,7 @@ management, and a scheduler that ties them together.
 | `MealDiner` | `ScheduleEntry` → `HouseholdMember`: who is eating that meal |
 | `FoodNeed` | `HouseholdMember`, polymorphic `subject` (`Ingredient`, `IngredientFamily`, `Component`), `tier`: `restriction` or `preference`, `sentiment`: `likes` or `dislikes` |
 | `ScheduleEntry` | `served_on`, `meal_slot` (`breakfast`/`lunch`/`dinner`), dish, `status` (`planned`/`served`/`skipped`/`swapped`), `origin` (`manual`/`derived`/`easy`), its diners. One active meal per slot |
-| `ShoppingListItem` | Derived, not stored (`ShoppingList`): `ScheduleEntry` requirements minus on-hand `StockItem`s, rounded up to the `Ingredient`'s `pack_size`. Exported to iOS Reminders by paste or a Shortcut reading `/shopping.json` |
+| `ShoppingListItem` | Derived, not stored (`ShoppingList`): `ScheduleEntry` requirements minus on-hand `StockItem`s, rounded up to the `Ingredient`'s `pack_size`. Exported to iOS Reminders directly from the Mac (`osascript` and `lib/reminders/add.js`), by paste, or by a Shortcut reading `/shopping.json` |
 
 ### stock kinds
 

@@ -225,6 +225,8 @@ To get it into Reminders:
 
 | Route | |
 | --- | --- |
+| **Send to Reminders** | When the app runs on the Mac itself (not in a container): adds each item to the list named by `REMINDERS_LIST` (default Groceries), creating it if needed, and skips any already there and not completed. It syncs to the phone through iCloud |
+| `osascript -l JavaScript lib/reminders/add.js https://<host>/shopping.json` | The same, run on the Mac against the app wherever it is hosted; from a LaunchAgent to keep the list current |
 | **Copy for Reminders** | Copies one item per line. Pasted into a Reminders list, each line becomes a reminder; a Groceries list sorts them into sections |
 | `/shopping.json` | `{list, from, days, items: [{title, notes}]}`, for a Shortcut; `?days=` sets the window |
 | `/shopping.txt` | One item per line |
@@ -240,6 +242,10 @@ The Shortcut, built once in the Shortcuts app:
 
 Run again, it only adds what is not already on the list.
 
+The first send asks macOS for access to Reminders. A refusal fails the send
+with where to allow it: System Settings → Privacy & Security → Reminders, and
+Automation for the process running the app.
+
 ## configuration
 
 | Variable | Default | |
@@ -247,6 +253,7 @@ Run again, it only adds what is not already on the list.
 | `LLM_BASE_URL` | `https://chat.bobbymeyer.com/v1` | Any OpenAI-compatible endpoint |
 | `LLM_MODEL` | none — required | An id from `$LLM_BASE_URL/models` |
 | `LLM_VISION_MODEL` | `LLM_MODEL` | The model receipt photos go to. It must accept images |
+| `REMINDERS_LIST` | `Groceries` | The Reminders list **Send to Reminders** adds to |
 | `SOLID_QUEUE_IN_PUMA` | unset | Production: runs import and receipt jobs inside Puma |
 
 Each request asks for `temperature: 0`, a `json_schema` response format, and

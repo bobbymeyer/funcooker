@@ -12,11 +12,20 @@
   <div data-controller="copy">
     <textarea class="visually-hidden" data-copy-target="source" readonly aria-label="The list, one item per line"><%= @shopping_list.to_text %></textarea>
     <div class="run">
-      <button type="button" class="button button--primary" data-action="copy#copy" data-copy-target="button">Copy for Reminders</button>
+      <% if Reminders.available? %>
+        <%= button_to "Send to Reminders", remind_shopping_list_path(days: @shopping_list.days), class: "button button--primary" %>
+      <% end %>
+      <button type="button" class="button<%= " button--primary" unless Reminders.available? %>" data-action="copy#copy" data-copy-target="button">Copy for Reminders</button>
       <%= link_to "Plain text", shopping_list_path(format: :text, days: @shopping_list.days), class: "link-quiet" %>
       <%= link_to "JSON for Shortcuts", shopping_list_path(format: :json, days: @shopping_list.days), class: "link-quiet" %>
     </div>
-    <p class="hint">Paste into a Reminders list: each line becomes a reminder, and a Groceries list sorts them into sections.</p>
+    <p class="hint">
+      <% if Reminders.available? %>
+        Send adds each item to <%= Reminders.list_name %> on this Mac, skipping any already there and not ticked. Or paste the copy into any Reminders list: each line becomes a reminder.
+      <% else %>
+        Paste into a Reminders list: each line becomes a reminder, and a Groceries list sorts them into sections. Sending straight to Reminders needs the app running on the Mac itself, not in a container.
+      <% end %>
+    </p>
   </div>
 
   <table class="table">
@@ -41,6 +50,12 @@
   </table>
 <% else %>
   <p class="empty"><%= @shopping_list.entries.any? ? "Everything the planned meals need is in stock." : "Nothing planned. Plan some meals on the schedule." %></p>
+<% end %>
+
+<%= explain label: "Send it to Reminders from the Mac, on a schedule" do %>
+  <p>However the app is hosted, the Mac can pull the list itself. In the funcooker checkout:</p>
+  <pre><code>osascript -l JavaScript lib/reminders/add.js <%= shopping_list_url(format: :json) %></code></pre>
+  <p>Run it from a LaunchAgent to keep Groceries current. It adds only what is not already on the list.</p>
 <% end %>
 
 <%= explain label: "Send it to Reminders with a Shortcut" do %>

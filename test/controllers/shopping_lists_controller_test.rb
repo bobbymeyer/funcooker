@@ -38,4 +38,36 @@ class ShoppingListsControllerTest < ActionDispatch::IntegrationTest
     get shopping_list_path
     assert_select "p.empty", /Nothing planned/
   end
+
+  test "off macOS there is no send button, and the page says why" do
+    get shopping_list_path
+
+    assert_select "button", text: "Send to Reminders", count: 0
+    assert_select "p.hint", /needs the app running on the Mac itself/
+  end
+
+  test "on a Mac, send adds the list to Reminders" do
+    defaults = [ Reminders.mac, Reminders.osascript, Reminders.runner ]
+    sent = nil
+    Reminders.mac = -> { true }
+    Reminders.osascript = -> { "/usr/bin/osascript" }
+    Reminders.runner = ->(*command) { sent = JSON.parse(command.last); [ '{"list":"Groceries","added":1,"skipped":0}', "", Struct.new(:success?, :exitstatus).new(true, 0) ] }
+
+    get shopping_list_path
+    assert_select "button", "Send to Reminders"
+
+    post remind_shopping_list_path(days: 3)
+
+    assert_redirected_to shopping_list_path(days: 3)
+    assert_equal "Added 1 item to Groceries.", flash[:notice]
+    assert_equal "corn tortilla, 3", sent["items"].sole["title"]
+  ensure
+    Reminders.mac, Reminders.osascript, Reminders.runner = defaults
+  end
+
+  test "a send that fails says why" do
+    post remind_shopping_list_path
+
+    assert_match "not running on macOS", flash[:alert]
+  end
 end
