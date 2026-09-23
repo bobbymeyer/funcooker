@@ -1,0 +1,28 @@
+<%= page_head "receipts" do %>
+  <%= link_to "Add a receipt", new_receipt_path, class: "button button--primary" %>
+<% end %>
+
+<% if @receipts.any? %>
+  <table class="table">
+    <thead>
+      <tr>
+        <th scope="col">Added</th>
+        <th scope="col">Store</th>
+        <th scope="col">Bought</th>
+        <th scope="col">Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @receipts.each do |receipt| %>
+        <tr>
+          <td><%= link_to l(receipt.created_at.to_date, format: :long), receipt %></td>
+          <td><%= receipt.store %></td>
+          <td><%= l(receipt.purchased_on, format: :long) if receipt.purchased_on %></td>
+          <td><%= receipt.status %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% else %>
+  <p class="empty">No receipts yet.</p>
+<% end %>

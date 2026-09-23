@@ -1,0 +1,40 @@
+<p>Check each line, then stock it. Unticked lines are left out. An ingredient marked new is added to the library.</p>
+
+<%= its_swiss_form_with model: receipt, url: receipt_confirmation_path(receipt), method: :post, class: "form form--dense" do |form| %>
+  <% if receipt.lines.any? { |line| line.errors.any? } %>
+    <div class="errors" role="alert">
+      <p class="errors__title">Some included lines need an ingredient and a quantity.</p>
+    </div>
+  <% end %>
+
+  <table class="table">
+    <thead>
+      <tr>
+        <th scope="col">Stock</th>
+        <th scope="col">On the receipt</th>
+        <th scope="col">Ingredient</th>
+        <th scope="col">Quantity</th>
+        <th scope="col">Unit</th>
+        <th scope="col">Keeps until</th>
+      </tr>
+    </thead>
+    <tbody>
+      <%= form.fields_for :lines do |line| %>
+        <tr>
+          <td><%= line.check_box :included, label: false %></td>
+          <td>
+            <%= line.object.description %>
+            <% unless line.object.ingredient || line.object.ingredient_name.blank? %><small>new</small><% end %>
+          </td>
+          <td><%= line.text_field :ingredient_name, label: false %></td>
+          <td><%= line.number_field :quantity, step: "any", label: false,
+                value: number_with_precision(line.object.quantity, strip_insignificant_zeros: true, precision: 4, delimiter: "") %></td>
+          <td><%= line.text_field :unit, label: false %></td>
+          <td><%= line.date_field :expires_on, label: false %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+
+  <%= form.submit "Stock these" %>
+<% end %>

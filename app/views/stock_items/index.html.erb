@@ -1,0 +1,32 @@
+<%= page_head "stock", lede: "Every lot on hand, soonest to expire first." do %>
+  <%= link_to "Add a receipt", new_receipt_path, class: "button button--primary" %>
+<% end %>
+
+<% if @stock_items.any? %>
+  <table class="table">
+    <thead>
+      <tr>
+        <th scope="col">Item</th>
+        <th scope="col">Kind</th>
+        <th scope="col" class="numeric">Quantity</th>
+        <th scope="col">Unit</th>
+        <th scope="col">Acquired</th>
+        <th scope="col">Keeps until</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @stock_items.each do |item| %>
+        <tr>
+          <td><%= item.stockable.name %></td>
+          <td><%= item.kind.humanize(capitalize: false) %></td>
+          <td class="numeric"><%= number_with_precision(item.quantity, strip_insignificant_zeros: true, precision: 3) %></td>
+          <td><%= item.unit %></td>
+          <td><%= l(item.acquired_on, format: :long) if item.acquired_on %></td>
+          <td><%= l(item.expires_on, format: :long) if item.expires_on %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% else %>
+  <p class="empty">Nothing in stock.</p>
+<% end %>

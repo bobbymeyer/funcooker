@@ -15,6 +15,10 @@ Rails.application.routes.draw do
 
   resources :recipe_imports, only: %i[ new create show ]
   resources :components, only: %i[ index show ]
+  resources :receipts, only: %i[ index new create show ] do
+    resource :confirmation, only: :create, module: :receipts
+  end
+  resources :stock_items, only: :index, path: "stock"
 
   root "components#index"
 end
