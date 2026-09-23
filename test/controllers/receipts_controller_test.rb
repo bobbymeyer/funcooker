@@ -65,6 +65,18 @@ class ReceiptsControllerTest < ActionDispatch::IntegrationTest
     assert_select ".errors__title", /need an ingredient and a quantity/
   end
 
+  test "deleting a receipt keeps what was stocked from it" do
+    receipt = parsed_receipt
+    line = receipt.lines.first
+    receipt.confirm(lines_attributes: [ { id: line.id, included: "1" }, { id: receipt.lines.second.id, included: "0" } ])
+
+    delete receipt_path(receipt)
+
+    assert_redirected_to receipts_path
+    assert_not Receipt.exists?(receipt.id)
+    assert_equal 1, StockItem.count
+  end
+
   private
     def parsed_receipt
       Receipt.create!(source_text: "receipt", status: :parsed, purchased_on: Date.new(2026, 9, 20)).tap do |receipt|

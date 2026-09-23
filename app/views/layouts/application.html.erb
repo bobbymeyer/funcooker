@@ -21,7 +21,8 @@
 <% end %>
 
 <% content_for :nav do %>
-  <%= nav_link_to "components", components_path, current: controller_name == "components" %>
+  <%= nav_link_to "components", components_path, current: controller_path.start_with?("components") || controller_name == "decompositions" %>
+  <%= nav_link_to "ingredients", ingredients_path, current: controller_path.in?(%w[ ingredients ingredient_families ]) %>
   <%= nav_link_to "import", new_recipe_import_path, current: controller_name == "recipe_imports" %>
   <%= nav_link_to "stock", stock_items_path, current: controller_name == "stock_items" %>
   <%= nav_link_to "receipts", receipts_path, current: controller_path.start_with?("receipts") %>

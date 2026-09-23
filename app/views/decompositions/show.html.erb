@@ -1,0 +1,10 @@
+<%= turbo_stream_from @decomposition %>
+
+<%= page_head "decompose", lede: @decomposition.component.name %>
+
+<% if @decomposition.failed? %>
+  <p class="errors"><%= @decomposition.error %></p>
+  <p><%= link_to "Back to #{@decomposition.component.name}", @decomposition.component %></p>
+<% else %>
+  <p class="empty">Breaking it into components. This page updates when it is done.</p>
+<% end %>

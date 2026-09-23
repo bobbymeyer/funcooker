@@ -40,6 +40,7 @@ management, and a scheduler that ties them together.
 | `Step` | Belongs to a `Component`. `position`, `phase` (`prep`/`plate`), `mode` (`active`/`passive`), `duration_minutes`, `instructions` |
 | `StockItem` | One lot. `stockable` (`Ingredient` or `Component`), `kind`, `quantity`, `unit`, `acquired_on`, `expires_on` |
 | `StockTransaction` | `StockItem`, `delta`, `source` (`receipt`, `manual`, `step_consumption`, `step_production`), optional `Step` |
+| `Decomposition` | `Component`, `status`, and the recipe's ingredients and steps as they were before the rewrite |
 | `Receipt` | A photo or pasted text, `store`, `purchased_on`, `status` (`pending`/`processing`/`parsed`/`failed`/`confirmed`) |
 | `ReceiptLine` | `Receipt`, `description` as printed, `ingredient_name`, `quantity`, `unit`, `expires_on`, `included`, the `StockItem` it became |
 | `HouseholdMember` | `name` |
@@ -85,8 +86,10 @@ The household eats together, so every member's restrictions apply to every
 5. Recipes are always stored for 1 adult. The model reports how many adult
    servings the source makes; the import divides. Later steps scale up to
    whoever is eating.
-6. Imported recipes land as a single `Component`. Breaking them into
-   reusable sub-components is manual.
+6. Imported recipes land as a single `Component`. **Decompose** breaks one
+   into reusable sub-components with the model, reusing an existing
+   component when it is the same or very similar, and rewrites the recipe's
+   steps as prep and plate to use them.
 7. The model is served by llama-swap on the Studio, over its
    OpenAI-compatible API. Extraction runs as a background job.
 

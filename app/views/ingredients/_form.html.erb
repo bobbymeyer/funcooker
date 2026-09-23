@@ -1,0 +1,9 @@
+<%= its_swiss_form_with model: ingredient, class: "form measure" do |form| %>
+  <%= render "its_swiss/shared/errors", record: ingredient %>
+  <%= form.text_field :name %>
+  <%= form.text_field :category %>
+  <%= form.text_field :default_unit %>
+  <%= form.collection_select :ingredient_family_id, IngredientFamily.order(:name), :id, :name, { include_blank: "—" },
+        label: "Family", hint: "Ingredients in a family can stand in for each other." %>
+  <%= form.submit %>
+<% end %>

@@ -21,6 +21,12 @@ class ReceiptsController < ApplicationController
     @receipt = Receipt.find(params[:id])
   end
 
+  # Stock already made from it stays; it is food in the kitchen.
+  def destroy
+    Receipt.find(params[:id]).destroy!
+    redirect_to receipts_path, notice: "Deleted the receipt."
+  end
+
   private
     def receipt_params
       params.expect(receipt: %i[ photo source_text ])

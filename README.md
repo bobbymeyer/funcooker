@@ -13,6 +13,18 @@ bin/setup --skip-server
 LLM_MODEL=<model id> bin/dev
 ```
 
+## library
+
+Every record the app shows can be created, edited and deleted.
+
+| Page | |
+| --- | --- |
+| `/components` | New, edit and delete components. On a component: add, edit and remove its ingredient lines (an ingredient by name, or any of a family), steps (position, prep or plate, active or passive, minutes) and sub-components. Deleting a component takes its lines and steps with it; one used inside another, in stock or on the schedule is not deleted |
+| `/ingredients` | New, edit and delete ingredients, and their families under **Families**. An ingredient used in a recipe or in stock is not deleted; deleting a family keeps its ingredients |
+| `/stock` | Add a lot by hand, edit or delete one. A lot's quantity only changes through a `StockTransaction`: one entered or corrected by hand is `manual` |
+| `/receipts` | Delete a receipt. What was stocked from it stays |
+| `/recipe_imports` | Past imports; delete one. The recipe it made stays |
+
 ## recipe import
 
 `/recipe_imports/new` takes a URL, pasted text, or the name of a dish. The import runs as a
@@ -44,6 +56,25 @@ A page that answers an error, a model that cannot be reached or runs out of
 tokens, a source with no ingredients and no steps, and a serving count that
 is not above 0 each fail the import,
 with the reason on its page.
+
+## decompose
+
+A component's page has **Decompose** while it is not yet made of other
+components. The model breaks the recipe into the parts worth making on their
+own (a sauce, a marinade, cooked rice, a dough) and rewrites it to use them,
+in a background job.
+
+| | |
+| --- | --- |
+| Reuse | Given every other component and its ingredients, the model reuses one that is the same or very close, at so many servings, instead of making a new one. The recipe's lines it stands in for are dropped |
+| New components | Made from the recipe's own ingredient lines, referred to by id, so nothing is invented. A line can be split between components; a family slot stays a family slot. Each is written for one adult and used at 1 serving |
+| The recipe | Keeps only the lines it uses directly, and its steps are rewritten to use the components. A line the model leaves unused stays on the recipe |
+| Steps | Every step, new or rewritten, is marked prep or plate, active or passive, with an estimated time. Each component used is linked to the step that uses it |
+
+The recipe's ingredients and steps as they were are kept on the
+`Decomposition`. A component and anything it is part of are never offered for
+reuse inside it. If the model finds nothing to break out, or names a component
+that does not exist, nothing changes and the reason is shown.
 
 ## receipts
 

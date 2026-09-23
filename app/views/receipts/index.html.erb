@@ -10,6 +10,7 @@
         <th scope="col">Store</th>
         <th scope="col">Bought</th>
         <th scope="col">Status</th>
+        <th scope="col"><span class="visually-hidden">Actions</span></th>
       </tr>
     </thead>
     <tbody>
@@ -19,6 +20,7 @@
           <td><%= receipt.store %></td>
           <td><%= l(receipt.purchased_on, format: :long) if receipt.purchased_on %></td>
           <td><%= receipt.status %></td>
+          <td><%= delete_button receipt_path(receipt), quiet: true, confirm: "Delete this receipt? Anything already stocked from it stays in stock." %></td>
         </tr>
       <% end %>
     </tbody>

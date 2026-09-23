@@ -10,6 +10,8 @@ class Component < ApplicationRecord
   has_many :stock_items, as: :stockable, dependent: :restrict_with_error
   has_many :food_needs, as: :subject, dependent: :destroy
   has_many :schedule_entries, foreign_key: :dish_id, dependent: :restrict_with_error, inverse_of: :dish
+  has_many :decompositions, dependent: :destroy
+  has_many :recipe_imports, dependent: :nullify
 
   validates :name, presence: true
   validates :source_url, format: { with: %r{\Ahttps?://\S+\z} }, allow_blank: true
@@ -27,8 +29,28 @@ class Component < ApplicationRecord
     source_url if source_url.to_s.match?(%r{\Ahttps?://\S+\z})
   end
 
+  # A recipe not yet broken into components, with ingredients to break out.
+  def decomposable?
+    !child_parts.exists? && component_ingredients.exists?
+  end
+
   def dish?
     !parent_parts.exists?
+  end
+
+  # Every component this one is part of, at any depth.
+  def ancestor_ids
+    ids, frontier = [], [ id ]
+    while frontier.any?
+      frontier = ComponentPart.where(child_id: frontier).pluck(:parent_id) - ids
+      ids.concat(frontier)
+    end
+    ids
+  end
+
+  # What can go inside this component without making a cycle.
+  def part_candidates
+    Component.where.not(id: [ id, *ancestor_ids ]).order(:name)
   end
 
   # This component and every component nested inside it, at any depth.

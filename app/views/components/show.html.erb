@@ -1,39 +1,102 @@
-<%= page_head @component.name, lede: @component.description %>
+<%= page_head @component.name, lede: @component.description do %>
+  <% if @component.decomposable? %>
+    <%= button_to "Decompose", component_decompositions_path(@component), class: "button" %>
+  <% end %>
+  <%= link_to "Edit", edit_component_path(@component), class: "button button--quiet" %>
+  <%= delete_button component_path(@component), confirm: "Delete #{@component.name}, its ingredients and its steps?" %>
+<% end %>
 
 <% if link = @component.source_link %>
   <p><%= link_to link, link, class: "link-quiet" %></p>
 <% end %>
 
-<h2>ingredients for 1 adult</h2>
-<table class="table">
-  <thead>
-    <tr>
-      <th scope="col">Ingredient</th>
-      <th scope="col" class="numeric">Amount</th>
-      <th scope="col">Unit</th>
-      <th scope="col">Note</th>
-    </tr>
-  </thead>
-  <tbody>
-    <% @component.component_ingredients.includes(:ingredient, :ingredient_family).each do |line| %>
+<h2>made of</h2>
+<% if @component.child_parts.any? %>
+  <table class="table">
+    <thead>
       <tr>
-        <td><%= (line.ingredient || line.ingredient_family).name %></td>
-        <td class="numeric"><%= number_with_precision(line.quantity, strip_insignificant_zeros: true, precision: 3) %></td>
-        <td><%= line.unit %></td>
-        <td><%= line.note %></td>
+        <th scope="col">Component</th>
+        <th scope="col" class="numeric">Amount</th>
+        <th scope="col">Unit</th>
+        <th scope="col"><span class="visually-hidden">Actions</span></th>
       </tr>
-    <% end %>
-  </tbody>
-</table>
+    </thead>
+    <tbody>
+      <% @component.child_parts.includes(:child).each do |part| %>
+        <tr>
+          <td><%= link_to part.child.name, part.child %></td>
+          <td class="numeric"><%= quantity(part.quantity) %></td>
+          <td><%= part.unit %></td>
+          <td class="run">
+            <%= link_to "Edit", edit_part_path(part), class: "link-quiet" %>
+            <%= delete_button part_path(part), label: "Remove", quiet: true, confirm: "Remove #{part.child.name} from #{@component.name}? The component itself is kept." %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% end %>
+<p><%= link_to "Add a component", new_component_part_path(@component) %></p>
+
+<h2>ingredients for 1 adult</h2>
+<% if @component.component_ingredients.any? %>
+  <table class="table">
+    <thead>
+      <tr>
+        <th scope="col">Ingredient</th>
+        <th scope="col" class="numeric">Amount</th>
+        <th scope="col">Unit</th>
+        <th scope="col">Note</th>
+        <th scope="col"><span class="visually-hidden">Actions</span></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @component.component_ingredients.includes(:ingredient, :ingredient_family).each do |line| %>
+        <tr>
+          <td><%= line.ingredient ? line.ingredient.name : "any #{line.ingredient_family.name}" %></td>
+          <td class="numeric"><%= quantity(line.quantity) %></td>
+          <td><%= line.unit %></td>
+          <td><%= line.note %></td>
+          <td class="run">
+            <%= link_to "Edit", edit_ingredient_line_path(line), class: "link-quiet" %>
+            <%= delete_button ingredient_line_path(line), label: "Remove", quiet: true, confirm: "Remove this ingredient from #{@component.name}?" %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% else %>
+  <p class="empty">None directly.</p>
+<% end %>
+<p><%= link_to "Add an ingredient", new_component_ingredient_line_path(@component) %></p>
 
 <h2>steps</h2>
-<table class="table measure steps">
-  <tbody>
-    <% @component.steps.each do |step| %>
-      <tr>
-        <td class="numeric"><%= step.position %></td>
-        <td><%= step.instructions %></td>
-      </tr>
+<% if @component.steps.any? %>
+  <table class="table steps">
+    <tbody>
+      <% @component.steps.each do |step| %>
+        <tr>
+          <td class="numeric steps__position"><%= step.position %></td>
+          <td><%= step.instructions %></td>
+          <td><%= step.phase %></td>
+          <td><%= step.mode %></td>
+          <td class="numeric steps__duration"><%= "#{step.duration_minutes} min" if step.duration_minutes %></td>
+          <td class="run">
+            <%= link_to "Edit", edit_step_path(step), class: "link-quiet" %>
+            <%= delete_button step_path(step), label: "Remove", quiet: true, confirm: "Remove step #{step.position}?" %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% end %>
+<p><%= link_to "Add a step", new_component_step_path(@component) %></p>
+
+<% if @component.parents.any? %>
+  <h2>used in</h2>
+  <ul>
+    <% @component.parents.order(:name).each do |parent| %>
+      <li><%= link_to parent.name, parent %></li>
     <% end %>
-  </tbody>
-</table>
+  </ul>
+<% end %>

@@ -1,0 +1,30 @@
+<%= page_head "ingredient families", lede: "Sets of ingredients that can stand in for each other." do %>
+  <%= link_to "New family", new_ingredient_family_path, class: "button button--primary" %>
+<% end %>
+
+<% if @ingredient_families.any? %>
+  <table class="table">
+    <thead>
+      <tr>
+        <th scope="col">Name</th>
+        <th scope="col">Ingredients</th>
+        <th scope="col"><span class="visually-hidden">Actions</span></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @ingredient_families.each do |family| %>
+        <tr>
+          <td><%= family.name %></td>
+          <td><%= family.ingredients.map(&:name).sort.join(", ") %></td>
+          <td class="run">
+            <%= link_to "Edit", edit_ingredient_family_path(family), class: "link-quiet" %>
+            <%= delete_button ingredient_family_path(family), quiet: true, confirm: "Delete #{family.name}? Its ingredients are kept." %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% else %>
+  <p class="empty">No families yet.</p>
+<% end %>
+<p><%= link_to "Ingredients", ingredients_path %></p>
