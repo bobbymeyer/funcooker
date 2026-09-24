@@ -19,7 +19,7 @@ class ThawReminderJobTest < ActiveJob::TestCase
     Reminders.osascript = -> { "/usr/bin/osascript" }
     Reminders.runner = ->(*command) { sent = JSON.parse(command.last); [ '{"list":"Reminders","added":1,"skipped":0}', "", Struct.new(:success?, :exitstatus).new(true, 0) ] }
 
-    ThawReminderJob.perform_now
+    ThawReminderJob.perform_now(force: true)
 
     assert_equal "Reminders", sent["list"]
     assert_equal [ "Thaw beef stew, 1 serving, for #{(Date.current + 1).strftime("%A")}" ], sent["items"].map { |item| item["title"] }
@@ -30,6 +30,23 @@ class ThawReminderJobTest < ActiveJob::TestCase
     Reminders.mac = -> { false }
     Reminders.runner = ->(*) { flunk "should not run" }
 
-    assert_nothing_raised { ThawReminderJob.perform_now }
+    assert_nothing_raised { ThawReminderJob.perform_now(force: true) }
+  end
+
+  test "runs hourly, and sends only at the household's hour, in its time zone" do
+    sent = 0
+    Reminders.mac = -> { true }
+    Reminders.osascript = -> { "/usr/bin/osascript" }
+    Reminders.runner = ->(*) { sent += 1; [ '{"list":"Reminders","added":1,"skipped":0}', "", Struct.new(:success?, :exitstatus).new(true, 0) ] }
+    Household.current.update!(time_zone: "America/Los_Angeles", thaw_reminder_hour: 16)
+
+    la = Time.find_zone("America/Los_Angeles")
+    today = Date.current
+
+    travel_to(la.local(today.year, today.month, today.day, 15, 5)) { ThawReminderJob.perform_now }
+    assert_equal 0, sent
+
+    travel_to(la.local(today.year, today.month, today.day, 16, 5)) { ThawReminderJob.perform_now }
+    assert_equal 1, sent
   end
 end

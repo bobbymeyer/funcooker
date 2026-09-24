@@ -44,7 +44,7 @@
 <% else %>
   <p class="empty">Nothing to take out for the meals planned <%= @thaw_plan.days == 2 ? "today and tomorrow" : "over the next #{@thaw_plan.days} days" %>.</p>
 <% end %>
-<p class="hint">Frozen servings the planned meals will draw on, where the fridge falls short, due the evening before. Thawing moves them to the fridge, and they drop off this list.<% if Reminders.available? %> Send adds each to <%= Reminders.thaw_list_name %> on this Mac, due that evening; every afternoon at 4 the app does the same for tonight's.<% end %></p>
+<p class="hint">Frozen servings the planned meals will draw on, where the fridge falls short, due the evening before. Thawing moves them to the fridge, and they drop off this list.<% if Reminders.available? %> Send adds each to <%= Reminders.thaw_list_name %> on this Mac, due that evening; every day at <%= Time.current.change(hour: Household.current.thaw_reminder_hour).strftime("%-l %p").downcase %> the app does the same for that evening's (set on the <%= link_to "household", household_members_path %> page).<% end %></p>
 
 <%= explain label: "Send them to Reminders from the Mac, on a schedule" do %>
   <p>With the app in a container, the Mac can fetch the list and add it itself, each reminder due the evening it should come out. Anything already on the list and not ticked is skipped:</p>

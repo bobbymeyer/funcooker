@@ -34,5 +34,7 @@ class ActiveSupport::TestCase
   setup do
     Rails.configuration.x.llm.base_url = "https://llm.test/v1"
     Rails.configuration.x.llm.model = "test-model"
+    # The tests' today and the app's are the same day, whatever the hour.
+    Household.create!(time_zone: "UTC")
   end
 end

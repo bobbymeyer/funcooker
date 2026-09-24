@@ -160,6 +160,13 @@ Each member's page adds, edits and removes their food needs: an ingredient, a
 family or a component, as a restriction (never planned when they are eating)
 or a preference that they like or dislike (scored).
 
+Below them, the household's settings:
+
+| Setting | Default | |
+| --- | --- | --- |
+| Time zone | America/Los_Angeles | What today and this evening mean everywhere: which meal is up next, what is due to thaw, when a lot expires. Web requests and jobs run in it |
+| Send thaw reminders at | 4 pm | The hour, in that zone, the day's thaws go to Reminders |
+
 ## decompose
 
 A component's page has **Decompose** while it is not yet made of other
@@ -261,8 +268,8 @@ off the list.
 | --- | --- |
 | `/schedule` | "Out of the freezer tonight", listing what is due |
 | `/freezer` | The list, each with **Thaw** set to the servings needed |
-| **Send to Reminders** | Adds each to the `REMINDERS_THAW_LIST` list, due 6pm the day it should come out. Shown only when the app runs on the Mac |
-| Daily at 4pm | In production, the app sends that evening's thaws to Reminders itself. It does nothing where Reminders is not available |
+| **Send to Reminders** | Adds each to the `REMINDERS_THAW_LIST` list, due 6pm (household time) the day it should come out. Shown only when the app runs on the Mac |
+| Daily | In production, at the household's thaw reminder hour (4pm by default), the app sends that evening's thaws to Reminders itself. It does nothing where Reminders is not available |
 | `/freezer.json` | `{ list, items: [{ title, notes, due }] }`, for `lib/reminders/add.js` run on the Mac when the app runs in a container |
 
 A reminder is titled with the component, the servings and the day ("Thaw
@@ -318,7 +325,6 @@ Automation for the process running the app.
 | `LLM_VISION_MODEL` | `LLM_MODEL` | The model receipt photos go to. It must accept images |
 | `REMINDERS_LIST` | `Groceries` | The Reminders list **Send to Reminders** adds the shopping list to |
 | `REMINDERS_THAW_LIST` | `Reminders` | The Reminders list thaw reminders go to |
-| `TIME_ZONE` | `UTC` | The household's time zone, by tz database name (`America/Los_Angeles`): what today and this evening mean |
 | `SOLID_QUEUE_IN_PUMA` | unset | Production: runs jobs, and the daily thaw reminder, inside Puma |
 
 Each request asks for `temperature: 0`, a `json_schema` response format, and
