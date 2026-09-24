@@ -55,4 +55,51 @@ class FreezersControllerTest < ActionDispatch::IntegrationTest
     post stock_item_thawing_path(frozen), params: { servings: "9" }
     assert_equal "Pick between 0 and 2 servings.", flash[:alert]
   end
+
+  test "what to thaw for the meals ahead, as a page and as JSON for Reminders" do
+    frozen = StockItem.create!(stockable: @stew, kind: :freezer, quantity: 5, unit: "serving")
+    ScheduleEntry.create!(served_on: Date.current + 1, dish: @stew)
+
+    get freezer_path
+    assert_select "h2", "to thaw"
+    assert_select "td", "tonight"
+    assert_select "form[action=?] input[name=servings][value='1.5']", stock_item_thawing_path(frozen)
+
+    get freezer_path(format: :json)
+    items = response.parsed_body["items"]
+    assert_equal "Reminders", response.parsed_body["list"]
+    assert_equal [ "Thaw beef stew, 1.5 servings, for #{(Date.current + 1).strftime("%A")}" ], items.map { |item| item["title"] }
+    assert items.first["due"]
+
+    get schedule_entries_path
+    assert_select ".thaw", /beef stew \(1.5 servings/
+
+    post stock_item_thawing_path(frozen), params: { servings: "1.5" }
+    get freezer_path
+    assert_select "h2", "to thaw"
+    assert_select "p.empty", /Nothing to take out/
+  end
+
+  test "on a Mac, send adds the thaws to Reminders" do
+    defaults = [ Reminders.mac, Reminders.osascript, Reminders.runner ]
+    sent = nil
+    Reminders.mac = -> { true }
+    Reminders.osascript = -> { "/usr/bin/osascript" }
+    Reminders.runner = ->(*command) { sent = JSON.parse(command.last); [ '{"list":"Reminders","added":1,"skipped":0}', "", Struct.new(:success?, :exitstatus).new(true, 0) ] }
+
+    post remind_freezer_path
+    assert_equal "Nothing to thaw.", flash[:notice]
+    assert_nil sent
+
+    StockItem.create!(stockable: @stew, kind: :freezer, quantity: 5, unit: "serving")
+    ScheduleEntry.create!(served_on: Date.current + 1, dish: @stew)
+    get freezer_path
+    assert_select "button", "Send to Reminders"
+
+    post remind_freezer_path
+    assert_equal "Added 1 reminder to Reminders.", flash[:notice]
+    assert_equal 1, sent["items"].size
+  ensure
+    Reminders.mac, Reminders.osascript, Reminders.runner = defaults
+  end
 end

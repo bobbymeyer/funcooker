@@ -16,6 +16,14 @@
   </section>
 <% end %>
 
+<% if @thaws.any? %>
+  <section class="thaw" aria-label="To thaw">
+    <p><strong>Out of the freezer <%= @thaws.all? { |thaw| thaw.entry.served_on == Date.current } ? "now" : "tonight" %>:</strong>
+      <%= @thaws.map { |thaw| "#{thaw.component.name} (#{pluralize(quantity(thaw.servings), "serving")}, for #{thaw.entry.served_on == Date.current ? "today" : thaw.entry.served_on.strftime("%A")})" }.to_sentence %>.
+      <%= link_to "Thaw", freezer_path %></p>
+  </section>
+<% end %>
+
 <h2>plan</h2>
 <%= its_swiss_form_with scope: :plan, url: plan_schedule_entries_path, class: "form form--dense measure" do |form| %>
   <%= form.date_field :from, value: @plan[:from] %>

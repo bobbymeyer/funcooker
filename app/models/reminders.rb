@@ -25,11 +25,17 @@ module Reminders
     ENV.fetch("REMINDERS_LIST", "Groceries")
   end
 
-  # items: [{ title:, notes: }]. Returns { "list", "added", "skipped" }.
-  def add(items)
+  # Where thaw reminders go: a to-do, not something to buy.
+  def thaw_list_name
+    ENV.fetch("REMINDERS_THAW_LIST", "Reminders")
+  end
+
+  # items: [{ title:, notes:, due: (optional ISO 8601 time) }]. Returns
+  # { "list", "added", "skipped" }.
+  def add(items, list: list_name)
     raise Error, "Reminders can only be written from the Mac itself; this server is not running on macOS" unless available?
 
-    out, err, status = runner.call(osascript.call, "-l", "JavaScript", SCRIPT.to_s, { list: list_name, items: }.to_json)
+    out, err, status = runner.call(osascript.call, "-l", "JavaScript", SCRIPT.to_s, { list:, items: }.to_json)
     unless status.success?
       message = err.to_s.strip.presence || "osascript exited with #{status.exitstatus}"
       message += ". #{PERMISSION_HINT}" if message.match?(/not authori[sz]ed|-1743|-10004|not allowed/i)

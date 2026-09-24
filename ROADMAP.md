@@ -46,6 +46,7 @@ management, and a scheduler that ties them together.
 | `CookingTask` | `CookingSession`, `Step`, `servings`, `position`, `cluster`, `started_at`, `completed_at` |
 | `Receipt` | A photo or pasted text, `store`, `purchased_on`, `status` (`pending`/`processing`/`parsed`/`failed`/`confirmed`) |
 | `ReceiptLine` | `Receipt`, `description` as printed, `ingredient_name`, `quantity`, `unit`, `expires_on`, `included`, the `StockItem` it became |
+| `Household` | One row of settings: `time_zone` (what today means), `thaw_reminder_hour` |
 | `HouseholdMember` | `name`, `portion` (adult servings), `eats_by_default` |
 | `MealDiner` | `ScheduleEntry` → `HouseholdMember`: who is eating that meal |
 | `FoodNeed` | `HouseholdMember`, polymorphic `subject` (`Ingredient`, `IngredientFamily`, `Component`), `tier`: `restriction` or `preference`, `sentiment`: `likes` or `dislikes` |
@@ -154,6 +155,10 @@ necessarily a dependency).
   Frozen stock thaws back to the fridge.
 - Stored as `StockItem`s with `kind: freezer`, expiring on the component's
   `freezer_life_days`.
+- **Thaw reminders.** The frozen servings the next meals will draw on,
+  where the fridge falls short, due the evening before: on the schedule, in
+  the freezer bank, and in iOS Reminders with a due time (sent daily from the
+  Mac, or pulled from `/freezer.json`).
 
 ## ingredient families
 

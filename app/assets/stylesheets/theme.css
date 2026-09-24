@@ -106,3 +106,6 @@ form.inline { display: inline; }
 .freezer__count {
   font-size: 1.25rem;
 }
+
+/* The thaw reminder on the schedule: a ruled note, not a card. */
+.thaw { margin-block: var(--line); padding-inline-start: var(--space-2); border-inline-start: var(--rule-heavy) solid var(--rule-strong); }

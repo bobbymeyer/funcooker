@@ -160,6 +160,13 @@ Each member's page adds, edits and removes their food needs: an ingredient, a
 family or a component, as a restriction (never planned when they are eating)
 or a preference that they like or dislike (scored).
 
+Below them, the household's settings:
+
+| Setting | Default | |
+| --- | --- | --- |
+| Time zone | America/Los_Angeles | What today and this evening mean everywhere: which meal is up next, what is due to thaw, when a lot expires. Web requests and jobs run in it |
+| Send thaw reminders at | 4 pm | The hour, in that zone, the day's thaws go to Reminders |
+
 ## decompose
 
 A component's page has **Decompose** while it is not yet made of other
@@ -233,6 +240,7 @@ tired**.
 | Section | Lists | Actions |
 | --- | --- | --- |
 | Count | Whole easy meals for everyone who eats by default: each frozen dish's servings over their summed portions, rounded down | |
+| to thaw | Frozen servings the meals planned today and tomorrow will draw on, and when to take them out | **Thaw**, set to the servings needed. **Send to Reminders** |
 | easy meals | Frozen dishes, soonest to expire first, with the meals each makes | **Eat next** swaps the meal up next for this dish, when it feeds that meal's diners. **Thaw** |
 | components | Every other frozen component | **Thaw** |
 | freeze before it turns | Prepped lots expiring within 3 days whose component freezes | **Freeze** |
@@ -245,6 +253,28 @@ tired**.
 Both take any number of servings up to the lot's, and are recorded as
 `freezer` transactions on both lots. Freezer stock can also be added by hand
 from `/stock`.
+
+### thaw reminders
+
+Meals are taken in date order, as cooking takes them. A dish, or a component
+inside it, comes from stock when its prepped and frozen servings together
+cover the meal; otherwise it is cooked, and the components inside it are
+taken the same way. The fridge is used first. What it is short of is a thaw,
+from the freezer lot that expires soonest, due the evening before the meal
+(or now, for a meal today). Thawing it moves it to the fridge, and it drops
+off the list.
+
+| Where | What |
+| --- | --- |
+| `/schedule` | "Out of the freezer tonight", listing what is due |
+| `/freezer` | The list, each with **Thaw** set to the servings needed |
+| **Send to Reminders** | Adds each to the `REMINDERS_THAW_LIST` list, due 6pm (household time) the day it should come out. Shown only when the app runs on the Mac |
+| Daily | In production, at the household's thaw reminder hour (4pm by default), the app sends that evening's thaws to Reminders itself. It does nothing where Reminders is not available |
+| `/freezer.json` | `{ list, items: [{ title, notes, due }] }`, for `lib/reminders/add.js` run on the Mac when the app runs in a container |
+
+A reminder is titled with the component, the servings and the day ("Thaw
+salsa verde, 1.5 servings, for Thursday"); one already on the list and not
+ticked is skipped, so sending again adds only what is new.
 
 ## shopping
 
@@ -293,8 +323,9 @@ Automation for the process running the app.
 | `LLM_BASE_URL` | `https://chat.bobbymeyer.com/v1` | Any OpenAI-compatible endpoint |
 | `LLM_MODEL` | none — required | An id from `$LLM_BASE_URL/models` |
 | `LLM_VISION_MODEL` | `LLM_MODEL` | The model receipt photos go to. It must accept images |
-| `REMINDERS_LIST` | `Groceries` | The Reminders list **Send to Reminders** adds to |
-| `SOLID_QUEUE_IN_PUMA` | unset | Production: runs import and receipt jobs inside Puma |
+| `REMINDERS_LIST` | `Groceries` | The Reminders list **Send to Reminders** adds the shopping list to |
+| `REMINDERS_THAW_LIST` | `Reminders` | The Reminders list thaw reminders go to |
+| `SOLID_QUEUE_IN_PUMA` | unset | Production: runs jobs, and the daily thaw reminder, inside Puma |
 
 Each request asks for `temperature: 0`, a `json_schema` response format, and
 `chat_template_kwargs: {enable_thinking: false}`, and waits up to 600 seconds

@@ -41,7 +41,9 @@ Rails.application.routes.draw do
       resource :thawing, only: :create
     end
   end
-  resource :freezer, only: :show
+  resource :freezer, only: :show do
+    post :remind
+  end
   resource :shopping_list, only: :show, path: "shopping" do
     post :remind
   end
@@ -67,6 +69,7 @@ Rails.application.routes.draw do
       post :reopen
     end
   end
+  resource :household, only: :update, path: "household/settings"
   resources :household_members, except: :show, path: "household" do
     resources :food_needs, only: %i[ create edit update destroy ], shallow: true, module: :household_members
   end

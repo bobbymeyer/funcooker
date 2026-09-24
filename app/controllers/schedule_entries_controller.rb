@@ -4,6 +4,7 @@ class ScheduleEntriesController < ApplicationController
   def index
     @up_next = ScheduleEntry.up_next
     @easy_meals = StockItem.easy_meals.count
+    @thaws = ThawPlan.new.due
     @entries = ScheduleEntry.includes(:dish, :diners).where(served_on: (Date.current - 7)..(Date.current + 28)).chronological
     @plan = { from: Date.current, days: 7, meal_slots: %w[ dinner ] }
   end

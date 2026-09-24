@@ -1,9 +1,9 @@
 GIT
   remote: https://github.com/bobbymeyer/its-swiss.git
-  revision: b131500eb16bbc90b82500b076742862a7248c5b
-  tag: v1.0.0
+  revision: e154ba47d0825bf1e615556585d766843ed16864
+  tag: v1.1.0
   specs:
-    its-swiss (1.0.0)
+    its-swiss (1.1.0)
       actionview (>= 8.0, < 10)
       importmap-rails (>= 2.0, < 4)
       propshaft (>= 1.0, < 3)
@@ -498,7 +498,7 @@ CHECKSUMS
   importmap-rails (2.2.3) sha256=7101be2a4dc97cf1558fb8f573a718404c5f6bcfe94f304bf1f39e444feeb16a
   io-console (0.9.4) sha256=a403304f32928ee85e56d457b4612ca43f2703b561a3258844992bd24085fbb1
   irb (1.18.0) sha256=de9454a0703a54704b9811a5ef31a60c86949fbf4013fcf244fabc7c775248e3
-  its-swiss (1.0.0)
+  its-swiss (1.1.0)
   jbuilder (2.15.1) sha256=2430bec28fb0cebacb5875b1009cf9d8bc3c303ccb810c4c8b062a4b51457637
   json (2.21.2) sha256=1f1d3b7cf2b3ba1a69beca0bb6db13d5438b80bff3cd54cdaaa620b9b07c1c6a
   kamal (2.12.0) sha256=c51d1ab085e515470f98d0c0f043637122b5ebf76e8b610cb1fbbed0b7f9b8fa

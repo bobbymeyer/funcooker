@@ -36,3 +36,11 @@
 <% else %>
   <p class="empty">Nobody yet. Recipes are stored for one adult; the household is who the plan is for.</p>
 <% end %>
+
+<h2>settings</h2>
+<%= its_swiss_form_with model: Household.current, url: household_path, method: :patch, class: "form form--dense measure" do |form| %>
+  <%= form.select :time_zone, Household.time_zone_options, {}, hint: "What today and this evening mean: when meals fall, and when thaws are due." %>
+  <%= form.select :thaw_reminder_hour, (0..23).map { |hour| [ Time.current.change(hour:).strftime("%-l %p").downcase, hour ] }, {},
+        label: "Send thaw reminders at", hint: "Each day, the app sends that evening's thaws to Reminders, when it runs on the Mac." %>
+  <%= form.submit "Save" %>
+<% end %>

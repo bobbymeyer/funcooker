@@ -12,6 +12,46 @@
   <% end %>
 </p>
 
+<h2>to thaw</h2>
+<% if @thaw_plan.thaws.any? %>
+  <table class="table">
+    <thead>
+      <tr>
+        <th scope="col">Take out</th>
+        <th scope="col">Component</th>
+        <th scope="col" class="numeric">Servings</th>
+        <th scope="col">For</th>
+        <th scope="col"><span class="visually-hidden">Actions</span></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @thaw_plan.thaws.each do |thaw| %>
+        <tr>
+          <td><%= thaw_by(thaw) %></td>
+          <td><%= link_to thaw.component.name, thaw.component %></td>
+          <td class="numeric"><%= quantity(thaw.servings) %></td>
+          <td><%= thaw.entry.dish.name %>, <%= l(thaw.entry.served_on, format: :short) %> <%= thaw.entry.meal_slot %></td>
+          <td class="run"><%= render "freezers/move", lot: thaw.lot, label: "Thaw", path: stock_item_thawing_path(thaw.lot), servings: thaw.servings %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+  <div class="run">
+    <% if Reminders.available? %>
+      <%= button_to "Send to Reminders", remind_freezer_path(days: @thaw_plan.days), class: "button" %>
+    <% end %>
+  </div>
+<% else %>
+  <p class="empty">Nothing to take out for the meals planned <%= @thaw_plan.days == 2 ? "today and tomorrow" : "over the next #{@thaw_plan.days} days" %>.</p>
+<% end %>
+<p class="hint">Frozen servings the planned meals will draw on, where the fridge falls short, due the evening before. Thawing moves them to the fridge, and they drop off this list.<% if Reminders.available? %> Send adds each to <%= Reminders.thaw_list_name %> on this Mac, due that evening; every day at <%= Time.current.change(hour: Household.current.thaw_reminder_hour).strftime("%-l %p").downcase %> the app does the same for that evening's (set on the <%= link_to "household", household_members_path %> page).<% end %></p>
+
+<%= explain label: "Send them to Reminders from the Mac, on a schedule" do %>
+  <p>With the app in a container, the Mac can fetch the list and add it itself, each reminder due the evening it should come out. Anything already on the list and not ticked is skipped:</p>
+  <pre><code>osascript -l JavaScript lib/reminders/add.js <%= freezer_url(format: :json) %></code></pre>
+  <p>Run it every afternoon from cron or launchd. The list is <%= Reminders.thaw_list_name %> (<code>REMINDERS_THAW_LIST</code>).</p>
+<% end %>
+
 <h2>easy meals</h2>
 <% if @meals.any? %>
   <table class="table">
