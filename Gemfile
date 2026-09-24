@@ -70,4 +70,4 @@ end
 # Rails 8.1.3 still passes a hash, so every signed cookie read raises.
 gem "json", "< 3"
 
-gem "its-swiss", github: "bobbymeyer/its-swiss", tag: "v1.0.0"
+gem "its-swiss", github: "bobbymeyer/its-swiss", tag: "v1.1.0"
