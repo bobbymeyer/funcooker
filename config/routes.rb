@@ -56,6 +56,13 @@ Rails.application.routes.draw do
       post :cook
     end
   end
+  resources :prep_blocks, only: %i[ create edit update destroy ], path: "cook/blocks" do
+    member { post :start }
+  end
+  resource :calendar, only: :show do
+    post :busy
+    post :read
+  end
   resources :cooking_sessions, only: %i[ index new create show destroy ], path: "cook" do
     member do
       post :recipe_order

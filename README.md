@@ -147,6 +147,36 @@ Stock is drawn soonest-expiring first, and only from lots in the unit the
 recipe measures in. What could not be drawn (none in stock, a different
 unit, or too little) is listed on the finished session rather than guessed.
 
+### prep blocks
+
+The prep planner also says when: how long the suggested prep takes, the
+first meal that needs it, and the first free stretch each day long enough,
+each with **Book**. Booking takes the ticked components as they are in the
+form and makes a prep block, listed under **booked prep** on `/cook` and put
+on the Mac's Calendar.
+
+| | |
+| --- | --- |
+| How long | The longer of all the active steps' time together and the longest single component made start to finish: hands do one active step at a time, and passive steps run alongside. A step with no time counts as 5 minutes of active work |
+| Free | Between the household's prep hours, around busy calendar events and prep already booked. All-day events do not count. A stretch that ends after the first meal needing the prep says it is too late for it |
+| Booked block | Moved, changed (servings, servings to freeze; 0 servings drops a component) or deleted from `/cook`, and the calendar event follows. **Start** makes its prep session |
+
+The calendar is read through the Mac's Calendar, so every calendar added to
+it counts (iCloud, Google, Exchange), recurring events included and events
+marked free left out. `lib/calendar/calendar.js` does the reading and
+writing through EventKit:
+
+| The app runs | Busy times | Prep blocks on the calendar |
+| --- | --- | --- |
+| On the Mac | Read when the prep planner opens (at most every 10 minutes), hourly in production, and on **Read the calendar again** | Written after each change, and hourly |
+| In a container | Sent by the Mac: `osascript -l JavaScript lib/calendar/calendar.js https://<host>` fetches `/calendar.json`, puts the prep blocks on the calendar, and posts the next 14 days' busy times to `/calendar/busy`. Run it from a LaunchAgent | The same run |
+
+A prep block's event carries its components, servings and time estimate, and
+a link back to the block. The app knows its events by a line at the end of
+their notes (`funcooker prep block <id>`): it moves them rather than adding
+them again, and removes any whose block is gone. The first run asks macOS
+for full access to Calendars.
+
 ## household
 
 `/household` lists who eats.
@@ -166,6 +196,9 @@ Below them, the household's settings:
 | --- | --- | --- |
 | Time zone | America/Los_Angeles | What today and this evening mean everywhere: which meal is up next, what is due to thaw, when a lot expires. Web requests and jobs run in it |
 | Send thaw reminders at | 4 pm | The hour, in that zone, the day's thaws go to Reminders |
+| Prep from, prep until | 8 am, 9 pm | The hours free time for prep is looked for in |
+| Busy calendars | blank: all | The Mac calendars whose events count as busy, by name, separated by commas |
+| Prep calendar | blank: the default | The Mac calendar booked prep goes on |
 
 ## decompose
 
@@ -325,7 +358,8 @@ Automation for the process running the app.
 | `LLM_VISION_MODEL` | `LLM_MODEL` | The model receipt photos go to. It must accept images |
 | `REMINDERS_LIST` | `Groceries` | The Reminders list **Send to Reminders** adds the shopping list to |
 | `REMINDERS_THAW_LIST` | `Reminders` | The Reminders list thaw reminders go to |
-| `SOLID_QUEUE_IN_PUMA` | unset | Production: runs jobs, and the daily thaw reminder, inside Puma |
+| `APP_URL` | `http://localhost:3000` | Where the app is reached, for the link in a prep block's calendar event when the app writes it itself |
+| `SOLID_QUEUE_IN_PUMA` | unset | Production: runs jobs, the daily thaw reminder and the hourly calendar read, inside Puma |
 
 Each request asks for `temperature: 0`, a `json_schema` response format, and
 `chat_template_kwargs: {enable_thinking: false}`, and waits up to 600 seconds

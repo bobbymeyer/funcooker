@@ -10,6 +10,9 @@
 #     schedule: at 5am every day
 
 production:
+  calendar:
+    class: CalendarReadJob
+    schedule: every hour at minute 30
   thaw_reminders:
     class: ThawReminderJob
     schedule: every hour at minute 0

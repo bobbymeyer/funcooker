@@ -6,18 +6,18 @@ class ThawReminderJobTest < ActiveJob::TestCase
     stew = Component.create!(name: "beef stew")
     ScheduleEntry.create!(served_on: Date.current + 1, dish: stew)
     StockItem.create!(stockable: stew, kind: :freezer, quantity: 2, unit: "serving")
-    @defaults = [ Reminders.mac, Reminders.osascript, Reminders.runner ]
+    @defaults = [ MacScript.mac, MacScript.osascript, MacScript.runner ]
   end
 
   teardown do
-    Reminders.mac, Reminders.osascript, Reminders.runner = @defaults
+    MacScript.mac, MacScript.osascript, MacScript.runner = @defaults
   end
 
   test "sends tonight's thaws to the thaw list, due this evening" do
     sent = nil
-    Reminders.mac = -> { true }
-    Reminders.osascript = -> { "/usr/bin/osascript" }
-    Reminders.runner = ->(*command) { sent = JSON.parse(command.last); [ '{"list":"Reminders","added":1,"skipped":0}', "", Struct.new(:success?, :exitstatus).new(true, 0) ] }
+    MacScript.mac = -> { true }
+    MacScript.osascript = -> { "/usr/bin/osascript" }
+    MacScript.runner = ->(*command) { sent = JSON.parse(command.last); [ '{"list":"Reminders","added":1,"skipped":0}', "", Struct.new(:success?, :exitstatus).new(true, 0) ] }
 
     ThawReminderJob.perform_now(force: true)
 
@@ -27,17 +27,17 @@ class ThawReminderJobTest < ActiveJob::TestCase
   end
 
   test "does nothing where there is no Reminders" do
-    Reminders.mac = -> { false }
-    Reminders.runner = ->(*) { flunk "should not run" }
+    MacScript.mac = -> { false }
+    MacScript.runner = ->(*) { flunk "should not run" }
 
     assert_nothing_raised { ThawReminderJob.perform_now(force: true) }
   end
 
   test "runs hourly, and sends only at the household's hour, in its time zone" do
     sent = 0
-    Reminders.mac = -> { true }
-    Reminders.osascript = -> { "/usr/bin/osascript" }
-    Reminders.runner = ->(*) { sent += 1; [ '{"list":"Reminders","added":1,"skipped":0}', "", Struct.new(:success?, :exitstatus).new(true, 0) ] }
+    MacScript.mac = -> { true }
+    MacScript.osascript = -> { "/usr/bin/osascript" }
+    MacScript.runner = ->(*) { sent += 1; [ '{"list":"Reminders","added":1,"skipped":0}', "", Struct.new(:success?, :exitstatus).new(true, 0) ] }
     Household.current.update!(time_zone: "America/Los_Angeles", thaw_reminder_hour: 16)
 
     la = Time.find_zone("America/Los_Angeles")

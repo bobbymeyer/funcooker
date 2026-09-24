@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_24_165517) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_24_212910) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.bigint "blob_id", null: false
     t.datetime "created_at", null: false
@@ -37,6 +37,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_24_165517) do
     t.bigint "blob_id", null: false
     t.string "variation_digest", null: false
     t.index ["blob_id", "variation_digest"], name: "index_active_storage_variant_records_uniqueness", unique: true
+  end
+
+  create_table "busy_times", force: :cascade do |t|
+    t.boolean "all_day", default: false, null: false
+    t.datetime "ends_at", null: false
+    t.datetime "starts_at", null: false
+    t.index ["starts_at"], name: "index_busy_times_on_starts_at"
   end
 
   create_table "component_ingredients", force: :cascade do |t|
@@ -143,7 +150,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_24_165517) do
   end
 
   create_table "households", force: :cascade do |t|
+    t.string "busy_calendars"
+    t.datetime "calendar_read_at"
     t.datetime "created_at", null: false
+    t.string "prep_calendar"
+    t.integer "prep_day_ends", default: 21, null: false
+    t.integer "prep_day_starts", default: 8, null: false
     t.integer "thaw_reminder_hour", default: 16, null: false
     t.string "time_zone", default: "America/Los_Angeles", null: false
     t.datetime "updated_at", null: false
@@ -191,6 +203,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_24_165517) do
     t.index ["cooking_session_id"], name: "index_prep_batches_on_cooking_session_id"
     t.index ["frozen_stock_item_id"], name: "index_prep_batches_on_frozen_stock_item_id"
     t.index ["stock_item_id"], name: "index_prep_batches_on_stock_item_id"
+  end
+
+  create_table "prep_blocks", force: :cascade do |t|
+    t.json "batches", default: [], null: false
+    t.integer "cooking_session_id"
+    t.datetime "created_at", null: false
+    t.datetime "ends_at", null: false
+    t.datetime "starts_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["cooking_session_id"], name: "index_prep_blocks_on_cooking_session_id"
+    t.index ["starts_at"], name: "index_prep_blocks_on_starts_at"
   end
 
   create_table "receipt_lines", force: :cascade do |t|
@@ -302,6 +325,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_24_165517) do
   add_foreign_key "prep_batches", "cooking_sessions"
   add_foreign_key "prep_batches", "stock_items"
   add_foreign_key "prep_batches", "stock_items", column: "frozen_stock_item_id"
+  add_foreign_key "prep_blocks", "cooking_sessions"
   add_foreign_key "receipt_lines", "receipts"
   add_foreign_key "receipt_lines", "stock_items"
   add_foreign_key "recipe_imports", "components"

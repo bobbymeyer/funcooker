@@ -16,6 +16,9 @@ class ScheduleEntry < ApplicationRecord
   enum :status, { planned: 0, served: 1, skipped: 2, swapped: 3 }, validate: true
   enum :origin, { manual: 0, derived: 1, easy: 2 }, validate: true
 
+  # When each meal is eaten, near enough: prep for it has to be done by then.
+  SERVED_AT_HOURS = { "breakfast" => 8, "lunch" => 12, "dinner" => 18 }.freeze
+
   scope :active, -> { where(status: %i[ planned served ]) }
   scope :chronological, -> { order(:served_on, :meal_slot, :id) }
 
@@ -37,6 +40,10 @@ class ScheduleEntry < ApplicationRecord
   def diner_ids=(ids)
     @diners_chosen = true
     super
+  end
+
+  def serves_at
+    served_on.in_time_zone.change(hour: SERVED_AT_HOURS.fetch(meal_slot))
   end
 
   # Adult servings the meal needs.

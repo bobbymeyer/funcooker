@@ -5,6 +5,12 @@
   <% end %>
 <% end %>
 
+<% if @prep_blocks.any? %>
+  <h2>booked prep</h2>
+  <%= render "prep_blocks/table", blocks: @prep_blocks %>
+<% end %>
+
+<h2>sessions</h2>
 <% if @sessions.any? %>
   <table class="table">
     <thead>

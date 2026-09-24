@@ -9,6 +9,12 @@ module ApplicationHelper
     number_with_precision(value, strip_insignificant_zeros: true, precision: 3)
   end
 
+  # Minutes as "1 h 20 min".
+  def duration_in_words(minutes)
+    hours, minutes = minutes.to_i.divmod(60)
+    [ ("#{hours} h" if hours.positive?), ("#{minutes} min" if minutes.positive? || hours.zero?) ].compact.join(" ")
+  end
+
   # A lot's quantity with its unit, in the plural where it is not one: "4
   # servings", "1 lb".
   def amount_of(lot)

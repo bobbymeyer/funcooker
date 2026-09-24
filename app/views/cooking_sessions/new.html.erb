@@ -47,5 +47,59 @@
     <p class="hint">Nothing planned needs prepping ahead. Pick a component to batch anyway.</p>
   <% end %>
   <p class="hint">Servings to freeze go to the <%= link_to "freezer bank", freezer_path %> instead of the fridge: cook once, freeze half. A dish frozen is an easy meal for a tired night.<% if @easy_meals.zero? %> The freezer has none right now.<% end %></p>
-  <%= form.submit "Start prep", class: "button button--primary" %>
+  <%= form.submit "Start prep now", class: "button button--primary" %>
+
+  <h2>when</h2>
+  <p>
+    All of it takes about <strong><%= duration_in_words(@estimate.minutes) %></strong>, <%= duration_in_words(@estimate.active_minutes) %> of it hands-on<%= "; #{pluralize(@estimate.untimed_steps, "step")} with no time count as #{Cooking::PrepEstimate::UNTIMED_MINUTES} min each" if @estimate.untimed_steps.positive? %>.
+    <% if @first_need %>
+      The first meal that needs it is <%= @first_need.dish.name %>, <%= l(@first_need.serves_at, format: :day_time) %>.
+    <% end %>
+  </p>
+
+  <% if @calendar_error %>
+    <p class="errors"><%= @calendar_error %></p>
+  <% end %>
+
+  <% if @slots.any? %>
+    <table class="table">
+      <thead>
+        <tr>
+          <th scope="col">Free</th>
+          <th scope="col">Until</th>
+          <th scope="col"><span class="visually-hidden">Book</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @slots.each do |slot| %>
+          <% late = @first_need && slot.starts_at + @estimate.minutes.minutes > @first_need.serves_at %>
+          <tr>
+            <td><%= l(slot.starts_at, format: :day_time) %></td>
+            <td><%= l(slot.free_until, format: slot.free_until.to_date == slot.starts_at.to_date ? :time : :day_time) %><%= ", too late for #{@first_need.dish.name}" if late %></td>
+            <td class="run">
+              <button type="submit" class="button button--quiet" formaction="<%= prep_blocks_path %>" name="starts_at" value="<%= slot.starts_at.iso8601 %>">Book <%= l(slot.starts_at, format: :time) %></button>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+    <p class="hint">The first free stretch each day between <%= Household.current.prep_day_starts %>:00 and <%= Household.current.prep_day_ends %>:00 long enough for it, around <%= Household.current.calendar_read_at ? "the calendar (read #{time_ago_in_words(Household.current.calendar_read_at)} ago)" : "prep already booked; the calendar has not been read yet" %>. Booking takes the ticked components<%= " and puts the block on the calendar" if MacCalendar.available? %>.</p>
+  <% else %>
+    <p class="empty">No free stretch long enough in the next <%= pluralize(@days, "day") %>.</p>
+  <% end %>
+<% end %>
+
+<% if MacCalendar.available? %>
+  <%= button_to "Read the calendar again", read_calendar_path, class: "button button--quiet" %>
+<% else %>
+  <%= explain label: "Read the calendar from the Mac" do %>
+    <p>This server is not on the Mac, so the Mac brings the calendar to it. In the funcooker checkout on the Mac:</p>
+    <pre><code>osascript -l JavaScript lib/calendar/calendar.js <%= request.base_url %></code></pre>
+    <p>It puts the booked prep blocks on the calendar, and sends back what is busy for the next <%= MacCalendar::READ_DAYS %> days. Run it from a LaunchAgent every hour or so.</p>
+  <% end %>
+<% end %>
+
+<% if @prep_blocks.any? %>
+  <h2>booked</h2>
+  <%= render "prep_blocks/table", blocks: @prep_blocks %>
 <% end %>

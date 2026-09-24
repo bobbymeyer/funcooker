@@ -24,6 +24,9 @@ module Funcooker
     # config.time_zone = "Central Time (US & Canada)"
     # config.eager_load_paths << Rails.root.join("extras")
 
+    # Where the app is reached, for links in calendar events it writes itself.
+    config.x.app_url = ENV.fetch("APP_URL", "http://localhost:3000")
+
     # The OpenAI-compatible endpoint recipe import extracts with. LLM_MODEL is
     # an id from its /v1/models.
     config.x.llm.base_url = ENV.fetch("LLM_BASE_URL", "https://chat.bobbymeyer.com/v1")
