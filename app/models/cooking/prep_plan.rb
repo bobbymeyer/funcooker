@@ -4,24 +4,41 @@
 # meal whose dish is in stock whole needs nothing prepped.
 class Cooking::PrepPlan
   def initialize(from: Date.current, days: 7)
-    @entries = ScheduleEntry.active.planned.where(served_on: from...(from + days)).includes(:diners, :dish)
+    @entries = ScheduleEntry.active.planned.where(served_on: from...(from + days)).includes(:diners, :dish).chronological.to_a
   end
 
   # [[component, servings]], most needed first.
   def suggestions
-    needs = Hash.new(0)
-    whole = Hash.new { |hash, dish| hash[dish] = Cooking::Meal.stocked_servings(dish) }
-    @entries.each do |entry|
-      if whole[entry.dish] >= entry.servings
-        whole[entry.dish] -= entry.servings
-      else
-        Cooking::Meal.walk(entry.dish, entry.servings) { |component, servings| needs[component] += servings }
-      end
-    end
-
-    needs.filter_map do |component, servings|
-      short = servings - Cooking::Meal.stocked_servings(component)
-      [ component, short.round(2) ] if short.positive? && component.steps.any?
-    end.sort_by { |component, servings| [ -servings, component.name ] }
+    @suggestions ||= build
   end
+
+  # The first meal that needs any of the suggestions: the prep is best done
+  # before it.
+  def first_need
+    components = suggestions.map(&:first)
+    @entries.find { |entry| @needed_by[entry].intersect?(components) }
+  end
+
+  private
+    def build
+      needs = Hash.new(0)
+      @needed_by = Hash.new { |hash, entry| hash[entry] = [] }
+      whole = Hash.new { |hash, dish| hash[dish] = Cooking::Meal.stocked_servings(dish) }
+
+      @entries.each do |entry|
+        if whole[entry.dish] >= entry.servings
+          whole[entry.dish] -= entry.servings
+        else
+          Cooking::Meal.walk(entry.dish, entry.servings) do |component, servings|
+            needs[component] += servings
+            @needed_by[entry] << component
+          end
+        end
+      end
+
+      needs.filter_map do |component, servings|
+        short = servings - Cooking::Meal.stocked_servings(component)
+        [ component, short.round(2) ] if short.positive? && component.steps.any?
+      end.sort_by { |component, servings| [ -servings, component.name ] }
+    end
 end

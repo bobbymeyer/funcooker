@@ -1,0 +1,22 @@
+<table class="table">
+  <thead>
+    <tr>
+      <th scope="col">When</th>
+      <th scope="col">Prep</th>
+      <th scope="col"><span class="visually-hidden">Actions</span></th>
+    </tr>
+  </thead>
+  <tbody>
+    <% blocks.each do |block| %>
+      <tr>
+        <td><%= l(block.starts_at, format: :day_time) %> to <%= l(block.ends_at, format: :time) %></td>
+        <td><%= block.notes.lines.first(block.batch_list.size).map(&:strip).join(", ") %></td>
+        <td class="run">
+          <%= button_to "Start", start_prep_block_path(block), class: "button button--quiet" %>
+          <%= link_to "Edit", edit_prep_block_path(block), class: "link-quiet" %>
+          <%= delete_button prep_block_path(block), quiet: true, confirm: "Delete this prep block#{" and its calendar event" if MacCalendar.available?}?" %>
+        </td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>

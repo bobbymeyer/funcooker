@@ -42,5 +42,10 @@
   <%= form.select :time_zone, Household.time_zone_options, {}, hint: "What today and this evening mean: when meals fall, and when thaws are due." %>
   <%= form.select :thaw_reminder_hour, (0..23).map { |hour| [ Time.current.change(hour:).strftime("%-l %p").downcase, hour ] }, {},
         label: "Send thaw reminders at", hint: "Each day, the app sends that evening's thaws to Reminders, when it runs on the Mac." %>
+  <%= form.select :prep_day_starts, (0..23).map { |hour| [ Time.current.change(hour:).strftime("%-l %p").downcase, hour ] }, {}, label: "Prep from" %>
+  <%= form.select :prep_day_ends, (1..24).map { |hour| [ hour == 24 ? "midnight" : Time.current.change(hour:).strftime("%-l %p").downcase, hour ] }, {},
+        label: "Prep until", hint: "Free time for prep is looked for between these hours." %>
+  <%= form.text_field :busy_calendars, label: "Busy calendars", hint: "The Mac calendars whose events count as busy, by name, separated by commas. Blank: all of them." %>
+  <%= form.text_field :prep_calendar, label: "Prep calendar", hint: "The Mac calendar booked prep goes on. Blank: the default calendar." %>
   <%= form.submit "Save" %>
 <% end %>

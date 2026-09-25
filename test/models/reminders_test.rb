@@ -4,16 +4,16 @@ class RemindersTest < ActiveSupport::TestCase
   Status = Struct.new(:success?, :exitstatus)
 
   setup do
-    @defaults = [ Reminders.mac, Reminders.osascript, Reminders.runner ]
+    @defaults = [ MacScript.mac, MacScript.osascript, MacScript.runner ]
     @calls = []
   end
 
   teardown do
-    Reminders.mac, Reminders.osascript, Reminders.runner = @defaults
+    MacScript.mac, MacScript.osascript, MacScript.runner = @defaults
   end
 
   test "not available off macOS, and says so" do
-    Reminders.mac = -> { false }
+    MacScript.mac = -> { false }
 
     assert_not Reminders.available?
     error = assert_raises(Reminders::Error) { Reminders.add([]) }
@@ -41,8 +41,8 @@ class RemindersTest < ActiveSupport::TestCase
 
   private
     def on_a_mac(replying:)
-      Reminders.mac = -> { true }
-      Reminders.osascript = -> { "/usr/bin/osascript" }
-      Reminders.runner = ->(*command) { @calls << command; replying }
+      MacScript.mac = -> { true }
+      MacScript.osascript = -> { "/usr/bin/osascript" }
+      MacScript.runner = ->(*command) { @calls << command; replying }
     end
 end

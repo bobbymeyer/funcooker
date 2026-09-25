@@ -81,11 +81,11 @@ class FreezersControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "on a Mac, send adds the thaws to Reminders" do
-    defaults = [ Reminders.mac, Reminders.osascript, Reminders.runner ]
+    defaults = [ MacScript.mac, MacScript.osascript, MacScript.runner ]
     sent = nil
-    Reminders.mac = -> { true }
-    Reminders.osascript = -> { "/usr/bin/osascript" }
-    Reminders.runner = ->(*command) { sent = JSON.parse(command.last); [ '{"list":"Reminders","added":1,"skipped":0}', "", Struct.new(:success?, :exitstatus).new(true, 0) ] }
+    MacScript.mac = -> { true }
+    MacScript.osascript = -> { "/usr/bin/osascript" }
+    MacScript.runner = ->(*command) { sent = JSON.parse(command.last); [ '{"list":"Reminders","added":1,"skipped":0}', "", Struct.new(:success?, :exitstatus).new(true, 0) ] }
 
     post remind_freezer_path
     assert_equal "Nothing to thaw.", flash[:notice]
@@ -100,6 +100,6 @@ class FreezersControllerTest < ActionDispatch::IntegrationTest
     assert_equal "Added 1 reminder to Reminders.", flash[:notice]
     assert_equal 1, sent["items"].size
   ensure
-    Reminders.mac, Reminders.osascript, Reminders.runner = defaults
+    MacScript.mac, MacScript.osascript, MacScript.runner = defaults
   end
 end

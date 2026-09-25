@@ -1,0 +1,31 @@
+<%= page_head "edit prep block", lede: "#{duration_in_words(@prep_block.estimate.minutes)} by the steps, #{duration_in_words(@prep_block.estimate.active_minutes)} of it hands-on." %>
+
+<%= its_swiss_form_with model: @prep_block, class: "form measure" do |form| %>
+  <%= render "its_swiss/shared/errors", record: @prep_block %>
+  <%= form.datetime_field :starts_at, label: "Starts" %>
+  <%= form.datetime_field :ends_at, label: "Ends" %>
+
+  <table class="table">
+    <thead>
+      <tr>
+        <th scope="col">Component</th>
+        <th scope="col">Servings</th>
+        <th scope="col">Of which, freeze</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @prep_block.batch_list.each_with_index do |batch, index| %>
+        <tr>
+          <td>
+            <%= link_to batch.component.name, batch.component %>
+            <%= hidden_field_tag "prep_block[batches][#{index}][component_id]", batch.component.id %>
+          </td>
+          <td><%= number_field_tag "prep_block[batches][#{index}][servings]", quantity(batch.servings), step: "any", min: 0, "aria-label": "Servings of #{batch.component.name}" %></td>
+          <td><%= number_field_tag "prep_block[batches][#{index}][frozen_servings]", quantity(batch.frozen_servings), step: "any", min: 0, "aria-label": "Servings of #{batch.component.name} to freeze" %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+  <p class="hint">0 servings takes a component out of the block. The calendar event moves with it.</p>
+  <%= form.submit "Save" %>
+<% end %>

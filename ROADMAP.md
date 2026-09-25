@@ -46,7 +46,9 @@ management, and a scheduler that ties them together.
 | `CookingTask` | `CookingSession`, `Step`, `servings`, `position`, `cluster`, `started_at`, `completed_at` |
 | `Receipt` | A photo or pasted text, `store`, `purchased_on`, `status` (`pending`/`processing`/`parsed`/`failed`/`confirmed`) |
 | `ReceiptLine` | `Receipt`, `description` as printed, `ingredient_name`, `quantity`, `unit`, `expires_on`, `included`, the `StockItem` it became |
-| `Household` | One row of settings: `time_zone` (what today means), `thaw_reminder_hour` |
+| `Household` | One row of settings: `time_zone` (what today means), `thaw_reminder_hour`, `prep_day_starts` and `prep_day_ends`, `busy_calendars`, `prep_calendar`, when the calendar was last read |
+| `BusyTime` | `starts_at`, `ends_at`, `all_day`: what the Mac's Calendar says is taken, replaced on each read |
+| `PrepBlock` | A prep session booked for a time: `starts_at`, `ends_at`, `batches` (component, servings, servings to freeze), the `CookingSession` it started. Mirrored as a calendar event |
 | `HouseholdMember` | `name`, `portion` (adult servings), `eats_by_default` |
 | `MealDiner` | `ScheduleEntry` → `HouseholdMember`: who is eating that meal |
 | `FoodNeed` | `HouseholdMember`, polymorphic `subject` (`Ingredient`, `IngredientFamily`, `Component`), `tier`: `restriction` or `preference`, `sentiment`: `likes` or `dislikes` |
@@ -189,6 +191,16 @@ necessarily a dependency).
 - Schedule requirements minus on-hand stock, exported to the iOS Reminders
   grocery list. No custom in-app UI.
 
-## open work
+## calendar
 
-- [calendar integration for prep suggestions](https://github.com/bobbymeyer/funcooker/issues/1)
+- The Mac's Calendar, through EventKit (`lib/calendar/calendar.js`): every
+  calendar added to it counts, whatever the account.
+- **Free blocks.** The prep planner estimates the suggested prep from its
+  steps' durations and modes (active time together, or the longest component
+  start to finish, whichever is longer) and offers the first free stretch
+  each day within the household's prep hours, around busy events and prep
+  already booked.
+- **Prep blocks as events.** Booking a stretch makes a `PrepBlock`, written
+  to the calendar and kept in step as it is moved, changed or deleted.
+- Where the app cannot reach the Mac (a container), the Mac runs the script
+  against the app: it fetches the blocks and posts back busy times.
