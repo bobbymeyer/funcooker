@@ -33,7 +33,7 @@ management, and a scheduler that ties them together.
 | --- | --- |
 | `Ingredient` | Canonical raw item — `name`, `category`, `default_unit`, `pack_size` (in the default unit), optional `ingredient_family` |
 | `IngredientFamily` | Flat, unranked set of interchangeable `Ingredient`s (e.g. "alliums": shallot, red onion, yellow onion). An ingredient belongs to at most one family |
-| `Component` | Modular building block / sub-recipe — `name`, `description`, `source_url`, `shelf_life_days` once prepped and `freezer_life_days` frozen (0: does not freeze well), both estimated by the model with notes saying how. Has its own `Step`s. Nests inside other `Component`s through `ComponentPart` |
+| `Component` | Modular building block / sub-recipe — `name`, `description`, `source_url`, `source_note` (a book and page), `shelf_life_days` once prepped and `freezer_life_days` frozen (0: does not freeze well), both estimated by the model with notes saying how. Has its own `Step`s. Nests inside other `Component`s through `ComponentPart` |
 | Dish | A `Component` that is not the child of any other `Component`. Not a table or subclass: `Component.dishes`, `Component#dish?` |
 | `ComponentPart` | Parent `Component` → child `Component`, `quantity`, `unit`, optional consuming `Step`. No cycles |
 | `ComponentIngredient` | `Component` → exactly one of a locked `Ingredient` or a substitutable `IngredientFamily`, `quantity` for 1 adult, `unit`, `note`, optional consuming `Step` |
@@ -82,8 +82,9 @@ no override: a restriction is something they do not eat.
 1. Fetch page → check for [schema.org/Recipe](https://schema.org/Recipe)
    JSON-LD → read name, description and steps directly if present.
 2. If absent, send the page's text to the local model, constrained to the
-   recipe JSON schema. Pasted text takes the same path. A photographed
-   cookbook page takes it too, through a vision model.
+   recipe JSON schema. Pasted text takes the same path. Photographed
+   cookbook pages take it too, through a vision model: up to four, in page
+   order, in one request, so a recipe that turns the page is read whole.
 3. Ingredient lines come back parsed as `{amount, unit, ingredient, note}`.
    From JSON-LD, only the ingredient lines go to the model.
 4. A dish too simple for a recipe site or cookbook (pasta with jarred sauce,

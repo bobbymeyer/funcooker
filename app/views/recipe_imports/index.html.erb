@@ -17,7 +17,7 @@
       <% @recipe_imports.each do |import| %>
         <tr>
           <td><%= link_to l(import.created_at.to_date, format: :long), import %></td>
-          <td><%= import.source_url || import.dish_name || "pasted text" %></td>
+          <td><%= import_source(import) %></td>
           <td><%= import.status %></td>
           <td><%= link_to import.component.name, import.component if import.component %></td>
           <td><%= delete_button recipe_import_path(import), quiet: true, confirm: "Delete this import? The recipe it made is kept." %></td>

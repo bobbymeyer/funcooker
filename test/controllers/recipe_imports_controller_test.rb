@@ -74,4 +74,22 @@ class RecipeImportsControllerTest < ActionDispatch::IntegrationTest
     component.destroy!
     assert_nil import.reload.component
   end
+
+  test "photos of the pages, with the book they came from" do
+    get new_recipe_import_path
+    assert_select "input[type=file][name='recipe_import[photos][]'][multiple]"
+
+    assert_enqueued_with(job: RecipeImportJob) do
+      post recipe_imports_path, params: { recipe_import: {
+        photos: [ fixture_file_upload("receipt.png", "image/png"), fixture_file_upload("page_b.png", "image/png") ],
+        source_note: "Six Seasons, p. 88", sophistication: "divorced_dad"
+      } }
+    end
+
+    import = RecipeImport.last
+    assert_redirected_to import
+    assert_equal 2, import.photos.size
+    follow_redirect!
+    assert_select "p", "2 photos of Six Seasons, p. 88"
+  end
 end

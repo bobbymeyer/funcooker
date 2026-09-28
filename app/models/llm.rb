@@ -2,8 +2,8 @@ require "net/http"
 
 # Structured extraction against the OpenAI-compatible endpoint in
 # config.x.llm: the reply is constrained to a JSON schema, so it always parses
-# into the shape asked for. An image, when given, goes with the input to the
-# vision model.
+# into the shape asked for. Images, when given, go with the input to the
+# vision model, in order.
 class Llm
   class Error < StandardError; end
   class Refused < Error; end # the server answered, with an error
@@ -12,8 +12,8 @@ class Llm
 
   READ_TIMEOUT = 600 # the first request after idle waits for the model to load
 
-  def self.extract(instructions:, input:, schema:, image: nil)
-    new.extract(instructions:, input:, schema:, image:)
+  def self.extract(instructions:, input:, schema:, image: nil, images: nil)
+    new.extract(instructions:, input:, schema:, image:, images:)
   end
 
   def initialize(config = Rails.configuration.x.llm)
@@ -22,17 +22,18 @@ class Llm
     @vision_model = config.vision_model.presence || config.model
   end
 
-  # image: { data: String, content_type: String }
-  def extract(instructions:, input:, schema:, image: nil)
-    model = image ? @vision_model : @model
+  # image: { data: String, content_type: String }; images: several of them.
+  def extract(instructions:, input:, schema:, image: nil, images: nil)
+    images = Array(images) + Array(image && [ image ])
+    model = images.any? ? @vision_model : @model
     raise Error, "LLM_MODEL is not set" if model.blank?
 
-    reply = complete(model:, image:, body: {
+    reply = complete(model:, images:, body: {
       model: model,
       temperature: 0,
       messages: [
         { role: "system", content: instructions },
-        { role: "user", content: image ? [ { type: "text", text: input }, image_part(image) ] : input }
+        { role: "user", content: images.any? ? [ { type: "text", text: input }, *images.map { |each| image_part(each) } ] : input }
       ],
       response_format: { type: "json_schema", json_schema: { name: "extraction", strict: true, schema: schema } },
       chat_template_kwargs: { enable_thinking: false }
@@ -49,10 +50,10 @@ class Llm
   private
     # A server that cannot take images refuses the request outright, so that
     # refusal says what is missing.
-    def complete(model:, image:, body:)
+    def complete(model:, images:, body:)
       post("chat/completions", body)
     rescue Refused => e
-      raise unless image
+      raise if images.empty?
 
       raise Refused, "#{model} could not read the image. #{VISION_HINT} The server said: #{e.message}"
     end

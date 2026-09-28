@@ -27,14 +27,16 @@ Every record the app shows can be created, edited and deleted.
 
 ## recipe import
 
-`/recipe_imports/new` takes a URL, pasted text, or the name of a dish. The import runs as a
-background job and its page refreshes onto the new component when it is done.
+`/recipe_imports/new` takes a URL, pasted text, photos of a cookbook's
+pages, or the name of a dish. The import runs as a background job and its
+page refreshes onto the new component when it is done.
 
 | Source | Read by |
 | --- | --- |
 | Page with `schema.org/Recipe` JSON-LD | Name, description and steps read directly; ingredient lines parsed by the model |
 | Page without it | The model, given the page's text with scripts, nav, header, footer, aside and forms removed, cut at 30,000 characters |
 | Pasted text | The model |
+| Photos of cookbook pages, up to 4 (JPEG, PNG or WebP) | The vision model, all pages in one request, in file name order (the order a phone took them), so a recipe that turns the page is read as one. **Which recipe** names it when the pages hold more than one; otherwise the most complete one is read. Page numbers, headers and pictures are ignored |
 | Named dish, e.g. "pasta and red sauce, store-bought noodles and sauce" | The model writes it for one adult, at the level chosen under **Written by**. Anything named as store-bought stays a single ingredient. No description |
 
 | Written by | Writes |
@@ -44,7 +46,8 @@ background job and its page refreshes onto the new component when it is done.
 | Michelin chef | Everything from scratch, refined technique, plated |
 
 Each import makes one `Component`: its steps in order, and its ingredient
-lines as `{amount, unit, ingredient, note}`.
+lines as `{amount, unit, ingredient, note}`. **From** (a book and page, say)
+is kept on the component and shown on its page, and can be edited there.
 
 Amounts are stored for one adult. The model reports how many adult servings
 the source makes — from its yield, estimated when the yield is in pieces
@@ -54,8 +57,10 @@ existing `Ingredient` by lowercase name, or created.
 
 A page that answers an error, a model that cannot be reached or runs out of
 tokens, a source with no ingredients and no steps, and a serving count that
-is not above 0 each fail the import,
-with the reason on its page.
+is not above 0 each fail the import, with the reason on its page. Photos
+that yield no recipe, and a server that refuses images, say what is needed:
+a vision-capable model loaded in llama-swap with its `--mmproj` file, and
+`LLM_VISION_MODEL` set to its id.
 
 ## schedule
 
@@ -355,7 +360,7 @@ Automation for the process running the app.
 | --- | --- | --- |
 | `LLM_BASE_URL` | `https://chat.bobbymeyer.com/v1` | Any OpenAI-compatible endpoint |
 | `LLM_MODEL` | none — required | An id from `$LLM_BASE_URL/models` |
-| `LLM_VISION_MODEL` | `LLM_MODEL` | The model receipt photos go to. It must accept images |
+| `LLM_VISION_MODEL` | `LLM_MODEL` | The model receipt and cookbook photos go to. It must accept images |
 | `REMINDERS_LIST` | `Groceries` | The Reminders list **Send to Reminders** adds the shopping list to |
 | `REMINDERS_THAW_LIST` | `Reminders` | The Reminders list thaw reminders go to |
 | `APP_URL` | `http://localhost:3000` | Where the app is reached, for the link in a prep block's calendar event when the app writes it itself |

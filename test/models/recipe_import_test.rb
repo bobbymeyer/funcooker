@@ -210,11 +210,62 @@ class RecipeImportTest < ActiveSupport::TestCase
     assert RecipeImport.new(source_url: " https://a.test/recipe ").valid?
   end
 
+  test "photos of cookbook pages go to the vision model together, in file name order" do
+    Rails.configuration.x.llm.vision_model = "vision-model"
+    stub_llm name: "Braised Beans", description: nil, servings: 4,
+      ingredients: [ { amount: 2, unit: "cup", ingredient: "white bean", note: "soaked" } ],
+      steps: [ "Braise the beans.", "Season and serve." ]
+
+    import = RecipeImport.create!(photos: [ fixture_upload("IMG_0102.png", "page_b.png"), fixture_upload("IMG_0101.png") ], source_note: " Six Seasons, p. 88 ", photo_recipe_name: "Braised Beans")
+    import.process
+
+    assert import.succeeded?
+    component = import.component
+    assert_equal [ "Braised Beans", "Six Seasons, p. 88" ], [ component.name, component.source_note ]
+    assert_equal 0.5, component.component_ingredients.sole.quantity, "2 cups for 4, stored for one adult"
+    assert_requested :post, LlmStubs::LLM_URL do |request|
+      body = JSON.parse(request.body)
+      content = body["messages"].last["content"]
+      body["model"] == "vision-model" &&
+        content.first["text"].include?("2 photos, in page order") && content.first["text"].include?("Braised Beans") &&
+        content.drop(1).map { |part| Base64.decode64(part.dig("image_url", "url").split(",").last) } == [ file_fixture("receipt.png").binread, file_fixture("page_b.png").binread ]
+    end
+  ensure
+    Rails.configuration.x.llm.vision_model = nil
+  end
+
+  test "photos that yield no recipe point at the vision model" do
+    stub_llm name: "", description: nil, servings: 1, ingredients: [], steps: []
+
+    import = page_import("IMG_0101.png")
+    import.process
+
+    assert import.failed?
+    assert_match "No recipe found in the photos", import.error
+    assert_match "LLM_VISION_MODEL", import.error
+  end
+
+  test "photos are images, at most four pages, and the only source" do
+    assert page_import("a.png").valid?
+    assert_not RecipeImport.new(photos: [ fixture_upload("a.png") ] * 5).valid?
+    assert_not RecipeImport.new(photos: [ fixture_upload("page.html", "recipe_with_json_ld.html") ]).valid?
+    assert_not RecipeImport.new(source_text: "toast", photos: [ fixture_upload("a.png") ]).valid?
+  end
+
   test "creating an import enqueues it" do
     assert_enqueued_with(job: RecipeImportJob) { RecipeImport.create!(source_text: "Toast it.") }
   end
 
   private
+    # A page photo named as a phone names it, from one of the fixture files.
+    def fixture_upload(filename, fixture = "receipt.png")
+      Rack::Test::UploadedFile.new(file_fixture(fixture), Marcel::MimeType.for(file_fixture(fixture)), original_filename: filename)
+    end
+
+    def page_import(*filenames, **attributes)
+      RecipeImport.create!(photos: filenames.map { |filename| fixture_upload(filename) }, **attributes)
+    end
+
     def stub_page(url, fixture)
       stub_request(:get, url).to_return(status: 200, body: file_fixture(fixture).read, headers: { "Content-Type" => "text/html" })
     end

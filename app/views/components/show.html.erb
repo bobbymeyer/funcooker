@@ -50,6 +50,9 @@
 <% if link = @component.source_link %>
   <p><%= link_to link, link, class: "link-quiet" %></p>
 <% end %>
+<% if @component.source_note %>
+  <p class="hint">From <%= @component.source_note %>.</p>
+<% end %>
 
 <h2>made of</h2>
 <% if @component.child_parts.any? %>

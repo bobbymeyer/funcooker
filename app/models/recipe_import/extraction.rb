@@ -6,7 +6,8 @@
 # them. The import divides by it; the model never does the arithmetic.
 #
 # JSON-LD is read directly, and only its ingredient lines go to the model to be
-# parsed. Anything else goes to the model whole. A named dish has no source:
+# parsed. Anything else goes to the model whole: text to the text model,
+# photographed cookbook pages to the vision model. A named dish has no source:
 # the model writes it, at the sophistication asked for.
 module RecipeImport::Extraction
   INGREDIENT = {
@@ -58,6 +59,13 @@ module RecipeImport::Extraction
     - servings: how many adult portions the recipe makes as written. Read it from the yield: "Serves 4" is 4, "4-6 servings" is 4. When the yield is in pieces or a container ("24 cookies", "1 loaf"), estimate the adult portions. When there is no yield, estimate from the amounts. Always a number above 0.
   TEXT
 
+  RECIPE_FIELDS = <<~TEXT
+    - name: the recipe's title.
+    - description: its short introduction, if it has one, else null.
+    - steps: each instruction step in order, as written, without numbering.
+    #{SERVINGS_RULE.chomp}
+  TEXT
+
   extend self
 
   def from_json_ld(recipe)
@@ -76,22 +84,31 @@ module RecipeImport::Extraction
   def from_text(text)
     reply = Llm.extract(schema: RECIPE, input: text, instructions: <<~TEXT)
       Extract the recipe from the text the user gives you. Copy it; do not invent or improve anything.
-      - name: the recipe's title.
-      - description: its short introduction, if it has one, else null.
-      - steps: each instruction step in order, as written, without numbering.
-      #{SERVINGS_RULE}
+      #{RECIPE_FIELDS.chomp}
       If the text holds no recipe, return an empty name, ingredients and steps, and 1 serving.
 
       #{INGREDIENT_RULES}
     TEXT
+    recipe_from(reply)
+  end
 
-    {
-      name: reply["name"].to_s.squish,
-      description: reply["description"].presence,
-      servings: reply["servings"],
-      steps: Array(reply["steps"]).map(&:squish).compact_blank,
-      ingredients: normalize(reply["ingredients"])
-    }
+  # Photos of cookbook pages, in page order: a recipe often starts on one
+  # page and ends on the next. Read by the vision model, copied as printed.
+  def from_photos(images, recipe_name: nil)
+    input = [ "The recipe is in the #{images.size == 1 ? "photo" : "#{images.size} photos, in page order"}.",
+      ("If the pages hold more than one recipe, read only the one called: #{recipe_name}" if recipe_name) ].compact.join(" ")
+
+    reply = Llm.extract(schema: RECIPE, input:, images:, instructions: <<~TEXT)
+      The user gives you photos of pages from a cookbook, in order. Read the recipe printed on them and copy it; do not invent, improve or complete anything.
+      A recipe may run across pages: its ingredients on one and its method on the next, or a step continuing over the page turn. Put it together in order as one recipe.
+      If the pages hold more than one recipe and the user does not name one, read the one that is most complete on these pages.
+      Ignore page numbers, running headers, photos of the dish, and notes in the margins that are not part of the recipe.
+      #{RECIPE_FIELDS.chomp}
+      If you cannot read a recipe in the photos, return an empty name, ingredients and steps, and 1 serving.
+
+      #{INGREDIENT_RULES}
+    TEXT
+    recipe_from(reply)
   end
 
   # How far a generated recipe goes, from the least a dish can be to a chef's
@@ -140,6 +157,16 @@ module RecipeImport::Extraction
   end
 
   private
+    def recipe_from(reply)
+      {
+        name: reply["name"].to_s.squish,
+        description: reply["description"].presence,
+        servings: reply["servings"],
+        steps: Array(reply["steps"]).map(&:squish).compact_blank,
+        ingredients: normalize(reply["ingredients"])
+      }
+    end
+
     def ingredients(lines, yields:)
       return { servings: 1, ingredients: [] } if lines.empty?
 
