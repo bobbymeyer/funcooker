@@ -1,4 +1,4 @@
-<%= page_head "import a recipe", lede: "From a recipe page's URL, pasted as text, or written by the model from the name of a dish." do %>
+<%= page_head "import a recipe", lede: "From a recipe page's URL, pasted as text, photos of a cookbook's pages, or written by the model from the name of a dish." do %>
   <%= link_to "Past imports", recipe_imports_path, class: "button button--quiet" %>
 <% end %>
 
@@ -6,6 +6,13 @@
   <%= render "its_swiss/shared/errors", record: @recipe_import %>
   <%= form.url_field :source_url, label: "URL" %>
   <%= form.text_area :source_text, label: "Or paste the recipe", rows: 12 %>
+  <div class="field<%= " field--invalid" if @recipe_import.errors[:photos].any? %>">
+    <%= form.label :photos, "Or photograph the pages" %>
+    <%= form.file_field :photos, multiple: true, accept: RecipeImport::IMAGE_TYPES.join(","), "aria-describedby": "recipe_import_photos_hint" %>
+    <p class="hint" id="recipe_import_photos_hint">Up to <%= RecipeImport::MAX_PHOTOS %> pages, read in file name order, which is the order a phone took them: a recipe that turns the page is read as one.</p>
+  </div>
+  <%= form.text_field :photo_recipe_name, label: "Which recipe", hint: "Only for photos, when the pages hold more than one." %>
+  <%= form.text_field :source_note, label: "From", hint: "The book and page, for photos or pasted text: Salt Fat Acid Heat, p. 212." %>
   <%= form.text_field :dish_name, label: "Or name a dish",
         hint: "Say what is store-bought: pasta and red sauce, store-bought noodles and sauce." %>
   <%= form.select :sophistication, RecipeImport.sophistications.keys.map { |level| [ sophistication_label(level), level ] }, {},

@@ -15,6 +15,7 @@ class Component < ApplicationRecord
   has_many :prep_batches, dependent: :destroy
 
   validates :name, presence: true
+  normalizes :source_note, with: ->(value) { value.strip.presence }
   validates :shelf_life_days, numericality: { only_integer: true, greater_than: 0 }, allow_nil: true
   # 0 means it does not freeze well; blank, not known yet.
   validates :freezer_life_days, numericality: { only_integer: true, greater_than_or_equal_to: 0 }, allow_nil: true

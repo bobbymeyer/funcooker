@@ -1,6 +1,6 @@
 class RecipeImportsController < ApplicationController
   def index
-    @recipe_imports = RecipeImport.includes(:component).order(created_at: :desc)
+    @recipe_imports = RecipeImport.includes(:component).with_attached_photos.order(created_at: :desc)
   end
 
   def new
@@ -30,6 +30,6 @@ class RecipeImportsController < ApplicationController
 
   private
     def recipe_import_params
-      params.expect(recipe_import: %i[ source_url source_text dish_name sophistication ])
+      params.expect(recipe_import: [ :source_url, :source_text, :dish_name, :sophistication, :source_note, :photo_recipe_name, photos: [] ])
     end
 end
