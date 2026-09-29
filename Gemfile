@@ -68,6 +68,6 @@ end
 
 # json 3 takes parse options only as keywords; ActiveSupport::JSON.decode in
 # Rails 8.1.3 still passes a hash, so every signed cookie read raises.
-gem "json", "< 3"
+gem "json", "< 4"
 
 gem "its-swiss", github: "bobbymeyer/its-swiss", tag: "v1.1.0"
