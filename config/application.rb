@@ -33,6 +33,8 @@ module Funcooker
     config.x.llm.model = ENV["LLM_MODEL"]
     # For requests with an image, when LLM_MODEL cannot read one.
     config.x.llm.vision_model = ENV["LLM_VISION_MODEL"]
+    # Sent as a Bearer token when set, for an endpoint that requires one.
+    config.x.llm.api_key = ENV["LLM_API_KEY"]
 
     # Whether sign-up closes once there is an account (see
     # User.registrations_open?). Set here, not left unset: an unset config.x
