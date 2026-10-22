@@ -25,10 +25,10 @@ Rails.application.configure do
   config.active_storage.service = :local
 
   # Assume all access to the app is happening through a SSL-terminating reverse proxy.
-  # config.assume_ssl = true
+  config.assume_ssl = true
 
   # Force all access to the app over SSL, use Strict-Transport-Security, and use secure cookies.
-  # config.force_ssl = true
+  config.force_ssl = true
 
   # Skip http-to-https redirect for the default health check endpoint.
   # config.ssl_options = { redirect: { exclude: ->(request) { request.path == "/up" } } }
@@ -78,6 +78,10 @@ Rails.application.configure do
 
   # Only use :id for inspections in production.
   config.active_record.attributes_for_inspect = [ :id ]
+
+  # Sign-up makes the first account and then closes, so whoever reaches the
+  # server cannot make another. REGISTRATIONS_OPEN=1 reopens it.
+  config.x.registrations_close_after_first = ENV["REGISTRATIONS_OPEN"] != "1"
 
   # Enable DNS rebinding protection and other `Host` header attacks.
   # config.hosts = [

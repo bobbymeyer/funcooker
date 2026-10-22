@@ -1,6 +1,7 @@
 ENV["RAILS_ENV"] ||= "test"
 require_relative "../config/environment"
 require "rails/test_help"
+require_relative "test_helpers/session_test_helper"
 require "webmock/minitest"
 
 module ActiveSupport
@@ -36,5 +37,15 @@ class ActiveSupport::TestCase
     Rails.configuration.x.llm.model = "test-model"
     # The tests' today and the app's are the same day, whatever the hour.
     Household.create!(time_zone: "UTC")
+    # Off the Mac, whatever runs the suite: a test that wants osascript stubs
+    # it, so none reaches the real Reminders or Calendar.
+    MacScript.mac = -> { false }
+  end
+end
+
+class ActionDispatch::IntegrationTest
+  # Signed in, unless a test signs out.
+  setup do
+    sign_in_as User.create!(email_address: "cook@example.com", password: "a long password")
   end
 end

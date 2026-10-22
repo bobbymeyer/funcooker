@@ -31,6 +31,9 @@
   <%= nav_link_to "stock", stock_items_path, current: controller_name == "stock_items" %>
   <%= nav_link_to "freezer", freezer_path, current: controller_name == "freezers" %>
   <%= nav_link_to "receipts", receipts_path, current: controller_path.start_with?("receipts") %>
+  <% if authenticated? %>
+    <%= button_to "sign out", session_path, method: :delete, class: "button button--quiet" %>
+  <% end %>
 <% end %>
 
 <%# Give main the grid when this application's pages are laid out on one:

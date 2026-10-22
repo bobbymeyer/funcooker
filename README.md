@@ -354,6 +354,15 @@ The first send asks macOS for access to Reminders. A refusal fails the send
 with where to allow it: System Settings → Privacy & Security → Reminders, and
 Automation for the process running the app.
 
+## accounts
+
+Every page needs a sign-in, `/up` excepted. JSON included.
+
+| Page | |
+| --- | --- |
+| `/session/new` | Sign in with an email address and password. **sign out** is in the nav |
+| `/registration/new` | Make an account: email address, and a password of at least 10 characters. In production, only while there is no account, or with `REGISTRATIONS_OPEN=1` |
+
 ## configuration
 
 | Variable | Default | |
@@ -364,6 +373,7 @@ Automation for the process running the app.
 | `REMINDERS_LIST` | `Groceries` | The Reminders list **Send to Reminders** adds the shopping list to |
 | `REMINDERS_THAW_LIST` | `Reminders` | The Reminders list thaw reminders go to |
 | `APP_URL` | `http://localhost:3000` | Where the app is reached, for the link in a prep block's calendar event when the app writes it itself |
+| `REGISTRATIONS_OPEN` | unset | Production: `1` keeps sign-up open after the first account |
 | `SOLID_QUEUE_IN_PUMA` | unset | Production: runs jobs, the daily thaw reminder and the hourly calendar read, inside Puma |
 
 Each request asks for `temperature: 0`, a `json_schema` response format, and

@@ -1,0 +1,9 @@
+<%= page_head "sign in" %>
+<%= its_swiss_form_with url: session_path do |form| %>
+  <%= form.email_field :email_address, required: true, autofocus: true, autocomplete: "username", value: params[:email_address], label: "Email address" %>
+  <%= form.password_field :password, required: true, autocomplete: "current-password", maxlength: 72 %>
+  <%= form.submit "Sign in" %>
+<% end %>
+<% if User.registrations_open? %>
+  <p><%= link_to "Make an account", new_registration_path %></p>
+<% end %>
