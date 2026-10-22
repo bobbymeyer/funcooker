@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_28_204354) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_22_213601) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.bigint "blob_id", null: false
     t.datetime "created_at", null: false
@@ -271,6 +271,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_28_204354) do
     t.index ["served_on", "meal_slot"], name: "index_schedule_entries_on_served_on_and_meal_slot"
   end
 
+  create_table "sessions", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "ip_address"
+    t.datetime "updated_at", null: false
+    t.string "user_agent"
+    t.integer "user_id", null: false
+    t.index ["user_id"], name: "index_sessions_on_user_id"
+  end
+
   create_table "steps", force: :cascade do |t|
     t.integer "component_id", null: false
     t.datetime "created_at", null: false
@@ -307,6 +316,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_28_204354) do
     t.index ["stock_item_id"], name: "index_stock_transactions_on_stock_item_id"
   end
 
+  create_table "users", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "email_address", null: false
+    t.string "password_digest", null: false
+    t.datetime "updated_at", null: false
+    t.index ["email_address"], name: "index_users_on_email_address", unique: true
+  end
+
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "component_ingredients", "components"
@@ -333,6 +350,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_28_204354) do
   add_foreign_key "receipt_lines", "stock_items"
   add_foreign_key "recipe_imports", "components"
   add_foreign_key "schedule_entries", "components", column: "dish_id"
+  add_foreign_key "sessions", "users"
   add_foreign_key "steps", "components"
   add_foreign_key "stock_transactions", "steps"
   add_foreign_key "stock_transactions", "stock_items"
