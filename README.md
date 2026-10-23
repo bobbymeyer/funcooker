@@ -370,6 +370,7 @@ Every page needs a sign-in, `/up` excepted. JSON included.
 | `LLM_BASE_URL` | `https://chat.bobbymeyer.com/v1` | Any OpenAI-compatible endpoint |
 | `LLM_MODEL` | none — required | An id from `$LLM_BASE_URL/models` |
 | `LLM_VISION_MODEL` | `LLM_MODEL` | The model receipt and cookbook photos go to. It must accept images |
+| `LLM_API_KEY` | unset | Sent as `Authorization: Bearer`, for an endpoint that requires a key |
 | `REMINDERS_LIST` | `Groceries` | The Reminders list **Send to Reminders** adds the shopping list to |
 | `REMINDERS_THAW_LIST` | `Reminders` | The Reminders list thaw reminders go to |
 | `APP_URL` | `http://localhost:3000` | Where the app is reached, for the link in a prep block's calendar event when the app writes it itself |

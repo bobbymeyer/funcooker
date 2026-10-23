@@ -35,6 +35,7 @@ class ActiveSupport::TestCase
   setup do
     Rails.configuration.x.llm.base_url = "https://llm.test/v1"
     Rails.configuration.x.llm.model = "test-model"
+    Rails.configuration.x.llm.api_key = nil
     # The tests' today and the app's are the same day, whatever the hour.
     Household.create!(time_zone: "UTC")
     # Off the Mac, whatever runs the suite: a test that wants osascript stubs

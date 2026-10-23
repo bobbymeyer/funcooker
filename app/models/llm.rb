@@ -20,6 +20,7 @@ class Llm
     @base_url = config.base_url
     @model = config.model
     @vision_model = config.vision_model.presence || config.model
+    @api_key = config.api_key.presence
   end
 
   # image: { data: String, content_type: String }; images: several of them.
@@ -65,6 +66,7 @@ class Llm
     def post(path, body)
       uri = URI.join(@base_url.chomp("/") + "/", path)
       request = Net::HTTP::Post.new(uri, "Content-Type" => "application/json")
+      request["Authorization"] = "Bearer #{@api_key}" if @api_key
       request.body = body.to_json
 
       response = Net::HTTP.start(uri.host, uri.port, use_ssl: uri.scheme == "https", open_timeout: 10, read_timeout: READ_TIMEOUT) do |http|

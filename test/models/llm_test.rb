@@ -19,6 +19,21 @@ class LlmTest < ActiveSupport::TestCase
     end
   end
 
+  test "sends the API key as a Bearer token when one is set" do
+    Rails.configuration.x.llm.api_key = "sk-test"
+    stub_llm ok: true
+    Llm.extract(instructions: "x", input: "y", schema: SCHEMA)
+
+    assert_requested :post, LlmStubs::LLM_URL, headers: { "Authorization" => "Bearer sk-test" }
+  end
+
+  test "sends no Authorization header without a key" do
+    stub_llm ok: true
+    Llm.extract(instructions: "x", input: "y", schema: SCHEMA)
+
+    assert_requested(:post, LlmStubs::LLM_URL) { |request| !request.headers.key?("Authorization") }
+  end
+
   test "a reply cut off by the token limit is an error" do
     stub_request(:post, LlmStubs::LLM_URL).to_return(status: 200,
       body: { choices: [ { finish_reason: "length", message: { content: "{\"ok\":" } } ] }.to_json)
